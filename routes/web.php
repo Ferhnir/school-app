@@ -1,27 +1,48 @@
 <?php
 
+use App\Http\Controllers\AdminDashboardController;
+use App\Http\Controllers\ParentDashboardController;
+use App\Http\Controllers\TeacherDashboardController;
 use App\Http\Controllers\ProfileController;
-use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\UserController;
 
-Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
-    ]);
+Route::get('/', [DashboardController::class, 'redirect'])
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
+
+Route::group([
+    'prefix' => '{locale}',
+    'where' => ['locale' => 'en|pl|ua'],
+], function (){
+    Route::middleware(['auth', 'verified'])->group(function (){
+
+        //DASHBOARD
+        Route::get('/', [DashboardController::class, 'redirect'])->name('dashboard');
+
+        Route::get('/admin/dashboard', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
+
+        Route::get('/parent/dashboard', [ParentDashboardController::class, 'index'])->name('parent.dashboard');
+
+        Route::get('/teacher/dashboard', [TeacherDashboardController::class, 'index'])->name('teacher.dashboard');
+
+        //AUTH USER Profile
+        Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+        Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+        Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+        //DASHBOARD - USERS
+        Route::controller(UserController::class)->group(function () {
+            Route::get('/admin/users', 'index')->name('admin.users.index');
+        });
+
+    });
 });
 
-Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
-
-Route::middleware('auth', 'verified')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-});
+Route::get('/lang/{locale}', function ($locale) {
+    app()->setLocale($locale);
+    return redirect()->back();
+})->name('language.switch');
 
 require __DIR__.'/auth.php';

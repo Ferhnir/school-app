@@ -5,9 +5,41 @@ import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
 import NavLink from '@/Components/NavLink.vue';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
-import { Link } from '@inertiajs/vue3';
+import { Link, usePage } from '@inertiajs/vue3';
+import { useRouteWithLocale } from '@/utils/route';
 
 const showingNavigationDropdown = ref(false);
+
+const goToRoute = useRouteWithLocale();
+const switchLocale = (locale) => {
+    return goToRoute(route().current(), {
+        ...route().params,
+        locale,
+    });
+};
+
+const page = usePage();
+const roles = page.props.auth.roles;
+
+const isAdmin = roles.includes('admin');
+const isTeacher = roles.includes('teacher');
+const isParent = roles.includes('parent');
+
+const menu = [
+    ...(isAdmin ? [
+        { name: 'Dashboard', route: 'admin.dashboard' },
+        { name: 'Users', route: 'admin.users.index' },
+    ] : []),
+
+    ...(isTeacher ? [
+        { name: 'My Lessons', route: 'teacher.lessons.index' },
+    ] : []),
+
+    ...(isParent ? [
+        { name: 'Bookings', route: 'parent.bookings.index' },
+    ] : []),
+];
+
 </script>
 
 <template>
@@ -39,10 +71,50 @@ const showingNavigationDropdown = ref(false);
                                 >
                                     Dashboard
                                 </NavLink>
+
+                                <NavLink
+                                    v-for="navLinkElement in menu"
+                                    :key="navLinkElement.route"
+                                    :href="goToRoute(navLinkElement.route)"
+                                    :active="route().current(navLinkElement.route + '*')"
+                                >
+                                    {{ navLinkElement.name }}
+                                </NavLink>
                             </div>
+
                         </div>
 
                         <div class="hidden sm:ms-6 sm:flex sm:items-center">
+
+                            <div class="py-2 px-4 flex gap-2 text-sm">
+                                <a
+                                    :href="switchLocale('en')"
+                                    :class="$page.props.locale === 'en' ? 'font-bold text-black' : 'text-gray-600'"
+                                >
+                                    EN
+                                </a>
+
+                                <span class="text-gray-300">|</span>
+
+                                <a
+                                    :href="switchLocale('pl')"
+                                    :class="$page.props.locale === 'pl' ? 'font-bold text-black' : 'text-gray-600'"
+                                >
+                                    PL
+                                </a>
+
+                                <span class="text-gray-300">|</span>
+
+                                <a
+                                    :href="switchLocale('ua')"
+                                    :class="$page.props.locale === 'ua' ? 'font-bold text-black' : 'text-gray-600'"
+                                >
+                                    UA
+                                </a>
+
+
+                            </div>
+
                             <!-- Settings Dropdown -->
                             <div class="relative ms-3">
                                 <Dropdown align="right" width="48">
@@ -72,7 +144,7 @@ const showingNavigationDropdown = ref(false);
 
                                     <template #content>
                                         <DropdownLink
-                                            :href="route('profile.edit')"
+                                            :href="goToRoute('profile.edit')"
                                         >
                                             Profile
                                         </DropdownLink>
@@ -164,7 +236,7 @@ const showingNavigationDropdown = ref(false);
                         </div>
 
                         <div class="mt-3 space-y-1">
-                            <ResponsiveNavLink :href="route('profile.edit')">
+                            <ResponsiveNavLink :href="goToRoute('profile.edit')">
                                 Profile
                             </ResponsiveNavLink>
                             <ResponsiveNavLink

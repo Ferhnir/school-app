@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -26,8 +27,10 @@ class UserSeeder extends Seeder
             ]
         ];
 
-        foreach($users as $user){
-            User::query()->firstOrCreate(['email' => $user['email']], $user);
+        foreach($users as $userElement){
+            $user = User::query()->firstOrCreate(['email' => $userElement['email']], $userElement);
+
+            $user->assignRole(UserRole::ADMIN->value);
         }
     }
 }

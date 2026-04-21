@@ -5,11 +5,15 @@ import { Link } from '@inertiajs/vue3';
 
 <template>
     <div
-        class="flex min-h-screen flex-col items-center bg-gray-100 pt-6 sm:justify-center sm:pt-0"
+        class="flex min-h-screen flex-col items-center bg-gray-100 pt-6 sm:justify-center sm:pt-0 bg-school-blue"
     >
         <div>
-            <Link href="/">
-                <ApplicationLogo class="h-20 w-20 fill-current text-gray-500" />
+            <Link href="/" class="flex items-center gap-3 text-white">
+                <ApplicationLogo class="h-20 w-20 fill-current text-white" />
+                <span class="text-[24px] font-bold pl-[15px] whitespace-normal text-white">
+                    Prywatna Szkoła Podstawowa
+                    <p class="text-center">SALWATOR</p>
+                </span>
             </Link>
         </div>
 
@@ -20,3 +24,9 @@ import { Link } from '@inertiajs/vue3';
         </div>
     </div>
 </template>
+
+<style>
+    .bg-school-blue {
+        background-color: #2060A0;
+    }
+</style>
