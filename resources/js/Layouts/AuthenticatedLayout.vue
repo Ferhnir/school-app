@@ -6,17 +6,11 @@ import DropdownLink from '@/Components/DropdownLink.vue';
 import NavLink from '@/Components/NavLink.vue';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
 import { Link, usePage } from '@inertiajs/vue3';
-import { useRouteWithLocale } from '@/utils/route';
+import { localeRouteHelpers } from '@/utils/route';
 
 const showingNavigationDropdown = ref(false);
 
-const goToRoute = useRouteWithLocale();
-const switchLocale = (locale) => {
-    return goToRoute(route().current(), {
-        ...route().params,
-        locale,
-    });
-};
+const { useRouteWithLocale, switchLocale } = localeRouteHelpers();
 
 const page = usePage();
 const roles = page.props.auth.roles;
@@ -54,7 +48,7 @@ const menu = [
                         <div class="flex">
                             <!-- Logo -->
                             <div class="flex shrink-0 items-center">
-                                <Link :href="route('dashboard')">
+                                <Link :href="useRouteWithLocale('dashboard')">
                                     <ApplicationLogo
                                         class="block h-9 w-auto fill-current text-gray-800"
                                     />
@@ -66,16 +60,9 @@ const menu = [
                                 class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex"
                             >
                                 <NavLink
-                                    :href="route('dashboard')"
-                                    :active="route().current('dashboard')"
-                                >
-                                    Dashboard
-                                </NavLink>
-
-                                <NavLink
                                     v-for="navLinkElement in menu"
                                     :key="navLinkElement.route"
-                                    :href="goToRoute(navLinkElement.route)"
+                                    :href="useRouteWithLocale(navLinkElement.route)"
                                     :active="route().current(navLinkElement.route + '*')"
                                 >
                                     {{ navLinkElement.name }}
@@ -144,7 +131,7 @@ const menu = [
 
                                     <template #content>
                                         <DropdownLink
-                                            :href="goToRoute('profile.edit')"
+                                            :href="useRouteWithLocale('profile.edit')"
                                         >
                                             Profile
                                         </DropdownLink>
@@ -213,7 +200,7 @@ const menu = [
                 >
                     <div class="space-y-1 pb-3 pt-2">
                         <ResponsiveNavLink
-                            :href="route('dashboard')"
+                            :href="useRouteWithLocale('dashboard')"
                             :active="route().current('dashboard')"
                         >
                             Dashboard
@@ -236,7 +223,7 @@ const menu = [
                         </div>
 
                         <div class="mt-3 space-y-1">
-                            <ResponsiveNavLink :href="goToRoute('profile.edit')">
+                            <ResponsiveNavLink :href="useRouteWithLocale('profile.edit')">
                                 Profile
                             </ResponsiveNavLink>
                             <ResponsiveNavLink
