@@ -98,8 +98,6 @@ const menu = [
                                 >
                                     UA
                                 </a>
-
-
                             </div>
 
                             <!-- Settings Dropdown -->
