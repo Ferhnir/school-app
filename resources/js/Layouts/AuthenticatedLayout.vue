@@ -23,10 +23,12 @@ const menu = [
     ...(isAdmin ? [
         { name: 'Dashboard', route: 'admin.dashboard' },
         { name: 'Users', route: 'admin.users.index' },
+        { name: 'Bookings', route: 'admin.bookings.index' },
     ] : []),
 
     ...(isTeacher ? [
         { name: 'My Lessons', route: 'teacher.lessons.index' },
+        { name: 'Bookings', route: 'admin.bookings.index' },
     ] : []),
 
     ...(isParent ? [

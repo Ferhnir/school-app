@@ -7,6 +7,8 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\BookingsController;
+use App\Enums\UserRole;
 
 Route::get('/', [DashboardController::class, 'redirect'])
     ->middleware(['auth', 'verified'])
@@ -21,22 +23,28 @@ Route::group([
         //DASHBOARD
         Route::get('/', [DashboardController::class, 'redirect'])->name('dashboard');
 
-        Route::get('/admin/dashboard', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
+        Route::get('/admin/dashboard', [AdminDashboardController::class, 'index'])->middleware('role:' . UserRole::ADMIN->value)->name('admin.dashboard');
 
-        Route::get('/parent/dashboard', [ParentDashboardController::class, 'index'])->name('parent.dashboard');
+        Route::get('/parent/dashboard', [ParentDashboardController::class, 'index'])->middleware('role:' . UserRole::PARENT->value)->name('parent.dashboard');
 
-        Route::get('/teacher/dashboard', [TeacherDashboardController::class, 'index'])->name('teacher.dashboard');
+        Route::get('/teacher/dashboard', [TeacherDashboardController::class, 'index'])->middleware('role:' . UserRole::TEACHER->value)->name('teacher.dashboard');
 
         //AUTH USER Profile
         Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
         Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
         Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-        //DASHBOARD - USERS
-        Route::controller(UserController::class)->group(function () {
-            Route::get('/admin/users', 'index')->name('admin.users.index');
-        });
+        Route::middleware('role:' . UserRole::ADMIN->value)->group( function () {
+            //DASHBOARD - USERS
+            Route::controller(UserController::class)->group(function () {
+                Route::get('/admin/users', 'index')->name('admin.users.index');
+            });
 
+            //DASHBOARD - BOOKINGS
+            Route::controller(BookingsController::class)->group(function (){
+                Route::get('/bookings', 'index')->name('admin.bookings.index');
+            });
+        });
     });
 });
 
