@@ -9,7 +9,7 @@ use Spatie\Permission\Models\Role;
 use Database\Seeders\RoleSeeder;
 use App\Enums\UserRole;
 use App\Models\User;
-use Carbon\Carbon;
+use Illuminate\Support\Carbon;
 use Carbon\CarbonPeriod;
 use Database\Seeders\UserSeeder;
 use Illuminate\Database\Eloquent\Collection;
@@ -18,115 +18,124 @@ use App\Data\SlotData;
 use App\Services\SlotFactory;
 
 #[Signature('app:demo')]
-#[Description('Command description')]
+#[Description('Seed demo teachers, parents, availability and bookings')]
 class Demo extends Command
 {
+    private const TEACHER_COUNT = 5;
+    private const PARENT_COUNT  = 30;
+
     private Collection $teachers;
 
     public function __construct()
     {
         parent::__construct();
-
         $this->teachers = new Collection();
     }
 
-    /**
-     * Execute the console command.
-     */
-    public function handle()
+    public function handle(): void
     {
-        //ROLES
-        if (!$this->allRolesExist()) {
-            $roleSeeder = new RoleSeeder();
-            $roleSeeder->run();
-            $this->info('Roles Created');
-        } else {
-            $this->info('All roles already exist, skipping...');
-        }
-
-        //USERS
-        $adminSeeder = new UserSeeder();
-        $adminSeeder->run();
-
-        if ( !User::role(UserRole::TEACHER->value)->exists() || !User::role(UserRole::PARENT->value)->exists()) {
-            $this->seedUsers();
-            $this->info('Users Created');
-        } else {
-            $this->teachers = User::role(UserRole::TEACHER->value)->get();
-            $this->info('Users with Teacher and Parent roles already exits, skipping');
-        }
-
-        //ADD BOOKING SLOTS FOR TEACHERS
+        $this->seedRoles();
+        $this->seedUsers();
         $this->createTeachersBookingSlots();
-
-        //BOOK RANDOM SLOTS
         $this->createBookingsWithTeachers();
+
+        $this->info('Done.');
     }
 
-    private function allRolesExist(): bool
+    private function seedRoles(): void
     {
-        $requiredRoles = collect(UserRole::cases())
-            ->map(fn ($role) => $role->value);
+        if ($this->allRolesExist()) {
+            $this->info('Roles already exist, skipping...');
+            return;
+        }
 
-        $existingRoles = Role::whereIn('name', $requiredRoles)
-            ->pluck('name');
-
-        return $requiredRoles->diff($existingRoles)->isEmpty();
+        (new RoleSeeder())->run();
+        $this->info('Roles created.');
     }
 
-    private function seedUsers()
+    private function seedUsers(): void
     {
-        //TEACHERS
-        $this->teachers = User::factory()->count(20)->create();
-        $this->teachers->each(fn (User $teacher) => $teacher->assignRole(UserRole::TEACHER->value));
+        (new UserSeeder())->run();
 
-        //PARENTS
-        $parents = User::factory()->count(20)->create();
-        $parents->each(fn (User $parent) => $parent->assignRole(UserRole::PARENT->value));
+        if (User::role(UserRole::TEACHER->value)->exists() && User::role(UserRole::PARENT->value)->exists()) {
+            $this->teachers = User::role(UserRole::TEACHER->value)->get();
+            $this->info('Users already exist, skipping...');
+            return;
+        }
+
+        $this->teachers = User::factory()->count(self::TEACHER_COUNT)->create();
+        $this->teachers->each(fn (User $u) => $u->assignRole(UserRole::TEACHER->value));
+
+        User::factory()->count(self::PARENT_COUNT)->create()
+            ->each(fn (User $u) => $u->assignRole(UserRole::PARENT->value));
+
+        $this->info(self::TEACHER_COUNT . ' teachers and ' . self::PARENT_COUNT . ' parents created.');
     }
 
-    private function createTeachersBookingSlots()
+    private function createTeachersBookingSlots(): void
     {
         $data = new SlotData(
-            days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
             start_date: Carbon::now(),
-            end_date: Carbon::now()->addDays(6),
+            end_date:   Carbon::now()->addDays(13),
+            days:       ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
             start_time: '09:00',
-            end_time: '21:00',
+            end_time:   '21:00',
         );
 
-        $this->teachers->each(function (User $teacher) use ($data) {
-            $slotFactoryService = new SlotFactory();
-            $slotFactoryService->createAvailabilitySlots($data, $teacher);
+        $slotFactory = new SlotFactory();
+
+        $this->teachers->each(function (User $teacher) use ($data, $slotFactory) {
+            $slotFactory->createAvailabilitySlots($data, $teacher);
         });
+
+        $this->info('Availability slots created.');
     }
 
-    private function createBookingsWithTeachers()
+    private function createBookingsWithTeachers(): void
     {
         $parents = User::role(UserRole::PARENT->value)->get();
 
-        $dates = CarbonPeriod::create(Carbon::now(), Carbon::now()->addWeeks(2))
-            ->filter(fn (Carbon $date) => $date->isWeekday());
+        $weekdays = collect(
+            CarbonPeriod::create(Carbon::now(), Carbon::now()->addDays(13))
+                ->filter(fn (Carbon $date) => $date->isWeekday())
+                ->toArray()
+        );
 
-        $this->teachers->each(function (User $teacher) use ($parents, $dates) {
-            foreach ($dates as $date) {
-                $slots = $teacher->getBookableSlots($date->toDateString(), 10, 0);
+        $this->teachers->each(function (User $teacher) use ($parents, $weekdays) {
+            $bookingCount  = rand(1, min(10, $weekdays->count()));
+            $selectedDates = $weekdays->shuffle()->take($bookingCount);
 
-                if (empty($slots)) {
+            foreach ($selectedDates as $date) {
+                $slots = collect($teacher->getBookableSlots($date->toDateString(), 10, 0))
+                    ->where('is_available', true);
+
+                if ($slots->isEmpty()) {
                     continue;
                 }
 
-                $slot   = collect($slots)->random();
-                $parent = $parents->random();
+                $slot = $slots->random();
 
                 Zap::for($teacher)
                     ->named('Parent Evening')
                     ->appointment()
                     ->from($date->toDateString())
                     ->addPeriod($slot['start_time'], $slot['end_time'])
-                    ->withMetadata(['parent_id' => $parent->id, 'type' => 'meeting-with-parent'])
+                    ->withMetadata([
+                        'parent_id' => $parents->random()->id,
+                        'type'      => 'meeting-with-parent',
+                    ])
                     ->save();
             }
+
+            $this->info("Teacher {$teacher->id}: {$bookingCount} booking(s) created.");
         });
+    }
+
+    private function allRolesExist(): bool
+    {
+        $required = collect(UserRole::cases())->map(fn ($r) => $r->value);
+        $existing = Role::whereIn('name', $required)->pluck('name');
+
+        return $required->diff($existing)->isEmpty();
     }
 }
