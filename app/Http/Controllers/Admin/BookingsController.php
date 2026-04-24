@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Admin;
 
 use App\Enums\UserRole;
 use App\Models\User;
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Inertia\Inertia;
@@ -52,10 +53,10 @@ class BookingsController extends Controller
                     }
 
                     $status = match (true) {
-                        $availableMinutes === 0                    => 'unavailable',
-                        $bookedMinutes === 0                       => 'free',
-                        $bookedMinutes >= $availableMinutes        => 'full',
-                        default                                    => 'partial',
+                        $availableMinutes === 0             => 'unavailable',
+                        $bookedMinutes === 0                => 'free',
+                        $bookedMinutes >= $availableMinutes => 'full',
+                        default                             => 'partial',
                     };
 
                     return [
@@ -85,6 +86,8 @@ class BookingsController extends Controller
                 'label'  => $monday->format('d M') . ' – ' . $friday->format('d M Y'),
             ],
             'teachers' => $teachers,
+            'parents'  => User::role(UserRole::PARENT->value)->select('id', 'name')->orderBy('name')->get(),
         ]);
     }
+
 }

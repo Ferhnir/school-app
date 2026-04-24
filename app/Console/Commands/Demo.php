@@ -21,8 +21,9 @@ use App\Services\SlotFactory;
 #[Description('Seed demo teachers, parents, availability and bookings')]
 class Demo extends Command
 {
-    private const TEACHER_COUNT = 5;
-    private const PARENT_COUNT  = 30;
+    private const TEACHER_COUNT   = 5;
+    private const PARENT_COUNT    = 30;
+    private const SLOT_DURATIONS  = [5, 10, 15, 20];
 
     private Collection $teachers;
 
@@ -74,21 +75,23 @@ class Demo extends Command
 
     private function createTeachersBookingSlots(): void
     {
-        $data = new SlotData(
-            start_date: Carbon::now(),
-            end_date:   Carbon::now()->addDays(13),
-            days:       ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
-            start_time: '09:00',
-            end_time:   '21:00',
-        );
-
         $slotFactory = new SlotFactory();
 
-        $this->teachers->each(function (User $teacher) use ($data, $slotFactory) {
-            $slotFactory->createAvailabilitySlots($data, $teacher);
-        });
+        $this->teachers->each(function (User $teacher) use ($slotFactory) {
+            $duration = self::SLOT_DURATIONS[array_rand(self::SLOT_DURATIONS)];
 
-        $this->info('Availability slots created.');
+            $data = new SlotData(
+                start_date:    Carbon::now(),
+                end_date:      Carbon::now()->addDays(13),
+                days:          ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
+                start_time:    '09:00',
+                end_time:      '21:00',
+                slot_duration: $duration,
+            );
+
+            $slotFactory->createAvailabilitySlots($data, $teacher);
+            $this->info("Teacher {$teacher->id}: {$duration}-min slots created.");
+        });
     }
 
     private function createBookingsWithTeachers(): void
@@ -106,7 +109,14 @@ class Demo extends Command
             $selectedDates = $weekdays->shuffle()->take($bookingCount);
 
             foreach ($selectedDates as $date) {
-                $slots = collect($teacher->getBookableSlots($date->toDateString(), 10, 0))
+                $availability = $teacher->schedules()
+                    ->availability()
+                    ->forDate($date->toDateString())
+                    ->first();
+
+                $duration = $availability?->metadata['slot_duration'] ?? 10;
+
+                $slots = collect($teacher->getBookableSlots($date->toDateString(), $duration, 0))
                     ->where('is_available', true);
 
                 if ($slots->isEmpty()) {

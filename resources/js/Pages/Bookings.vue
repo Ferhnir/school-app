@@ -5,14 +5,19 @@ import { ref, computed } from 'vue';
 import { localeRouteHelpers } from '@/utils/route';
 import TabButton from '@/Components/TabButton.vue';
 import AvailabilityModal from '@/Components/Modals/AvailabilityModal.vue';
+import BookingModal from '@/Components/Modals/BookingModal.vue';
 
 const { useRouteWithLocale } = localeRouteHelpers();
 
 const availabilityModalShow = ref(false);
+const bookingModalShow      = ref(false);
+const selectedTeacher       = ref(null);
+const selectedDay           = ref(null);
 
 const props = defineProps({
     week:     Object,
     teachers: Array,
+    parents:  Array,
 });
 
 const days = computed(() => props.teachers[0]?.days?.map(d => d.label) ?? []);
@@ -34,9 +39,17 @@ const formatStatus = (day) => {
     return `${day.bookings_count} booking${day.bookings_count !== 1 ? 's' : ''}`;
 };
 
-const openDay = (teacherId, dayIndex) => {
-    // TODO: open day detail modal
-    console.log('open', teacherId, props.teachers.find(t => t.id === teacherId)?.days[dayIndex]);
+const today = new Date().toISOString().slice(0, 10);
+
+const isPast = (day) => day.date < today;
+
+const isClickable = (day) => !isPast(day) && day.status !== 'unavailable' && day.status !== 'full';
+
+const openDay = (teacher, day) => {
+    if (!isClickable(day)) return;
+    selectedTeacher.value  = teacher;
+    selectedDay.value      = day;
+    bookingModalShow.value = true;
 };
 
 const navigate = (offset) => {
@@ -104,13 +117,14 @@ const navigate = (offset) => {
                                     <td class="p-3 font-medium">{{ teacher.name }}</td>
 
                                     <td
-                                        v-for="(day, index) in teacher.days"
-                                        :key="index"
-                                        class="p-3 text-center cursor-pointer hover:bg-gray-50"
-                                        @click="openDay(teacher.id, index)"
+                                        v-for="day in teacher.days"
+                                        :key="day.date"
+                                        class="p-3 text-center"
+                                        :class="isClickable(day) ? 'cursor-pointer hover:bg-gray-50' : ''"
+                                        @click="openDay(teacher, day)"
                                     >
                                         <span
-                                            :class="statusClass(day)"
+                                            :class="[statusClass(day), isPast(day) ? 'opacity-40' : '']"
                                             class="px-3 py-1 rounded-full text-xs font-medium"
                                         >
                                             {{ formatStatus(day) }}
@@ -129,6 +143,14 @@ const navigate = (offset) => {
             :open="availabilityModalShow"
             :teachers="teachers"
             @close="availabilityModalShow = false"
+        />
+
+        <BookingModal
+            :open="bookingModalShow"
+            :teacher="selectedTeacher"
+            :day="selectedDay"
+            :parents="parents"
+            @close="bookingModalShow = false"
         />
 
     </AuthenticatedLayout>

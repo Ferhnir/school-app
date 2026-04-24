@@ -1,13 +1,15 @@
 <?php
 
-use App\Http\Controllers\AdminDashboardController;
+use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\Admin\BookingsController;
+use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\ParentDashboardController;
 use App\Http\Controllers\TeacherDashboardController;
 use App\Http\Controllers\ProfileController;
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\BookingsController;
+use App\Http\Controllers\TeacherSlotsController;
+
+use Illuminate\Support\Facades\Route;
 use App\Enums\UserRole;
 
 Route::get('/', [DashboardController::class, 'redirect'])
@@ -34,18 +36,18 @@ Route::group([
         Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
         Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-        Route::middleware('role:' . UserRole::ADMIN->value)->group( function () {
-            //DASHBOARD - USERS
-            Route::controller(UserController::class)->group(function () {
-                Route::get('/admin/users', 'index')->name('admin.users.index');
-            });
-
-            //DASHBOARD - BOOKINGS
-            Route::controller(BookingsController::class)->group(function (){
-                Route::get('/bookings', 'index')->name('admin.bookings.index');
-            });
+        Route::middleware('role:' . UserRole::ADMIN->value)->group(function () {
+            Route::get('/admin/users', [UserController::class, 'index'])->name('admin.users.index');
+            Route::get('/bookings',    [BookingsController::class, 'index'])->name('admin.bookings.index');
         });
+
     });
+});
+
+//TEACHERS
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/teachers/{teacher}/date/{date}',  [TeacherSlotsController::class, 'index'])->name('teacher.slots.index');
+    Route::post('/teachers/{teacher}/date/{date}', [TeacherSlotsController::class, 'store'])->name('teacher.slots.store');
 });
 
 Route::get('/lang/{locale}', function ($locale) {

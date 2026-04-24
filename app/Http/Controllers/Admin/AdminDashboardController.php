@@ -1,11 +1,12 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Admin;
 
 use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Enums\UserRole;
+use App\Http\Controllers\Controller;
 
 class AdminDashboardController extends Controller
 {

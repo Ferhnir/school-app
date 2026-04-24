@@ -180,6 +180,66 @@ it('blocks delete when booked appointments exist in the date range', function ()
 
 });
 
+it('stores slot_duration in availability schedule metadata', function () {
+
+    $teacher = User::factory()->create();
+    $teacher->assignRole(UserRole::TEACHER->value);
+
+    $monday = Carbon::now()->next(Carbon::MONDAY);
+
+    $data = new SlotData(
+        start_date:    $monday->copy(),
+        end_date:      $monday->copy(),
+        days:          ['monday'],
+        start_time:    '09:00',
+        end_time:      '17:00',
+        slot_duration: 15,
+    );
+
+    $service = new SlotFactory();
+    $service->createAvailabilitySlots($data, $teacher);
+
+    $schedule = $teacher->availabilitySchedules()->first();
+    expect($schedule->metadata['slot_duration'])->toBe(15);
+
+});
+
+it('updates slot_duration in metadata when availability is updated', function () {
+
+    $teacher = User::factory()->create();
+    $teacher->assignRole(UserRole::TEACHER->value);
+
+    $monday = Carbon::now()->next(Carbon::MONDAY);
+
+    $data = new SlotData(
+        start_date:    $monday->copy(),
+        end_date:      $monday->copy(),
+        days:          ['monday'],
+        start_time:    '09:00',
+        end_time:      '17:00',
+        slot_duration: 10,
+    );
+
+    $service = new SlotFactory();
+    $service->createAvailabilitySlots($data, $teacher);
+
+    expect($teacher->availabilitySchedules()->first()->metadata['slot_duration'])->toBe(10);
+
+    $updated = new SlotData(
+        start_date:    $monday->copy(),
+        end_date:      $monday->copy(),
+        days:          ['monday'],
+        start_time:    '09:00',
+        end_time:      '17:00',
+        slot_duration: 20,
+    );
+
+    $service->updateAvailabilitySlots($updated, $teacher);
+
+    expect($teacher->availabilitySchedules()->first()->metadata['slot_duration'])->toBe(20);
+
+});
+
 it('Creates more availability slots for teacher on already existing ones', function () {
 
     $teacher = User::factory()->create();

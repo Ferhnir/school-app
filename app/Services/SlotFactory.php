@@ -31,6 +31,7 @@ class SlotFactory
                     ->availability()
                     ->from($date)
                     ->addPeriod($data->start_time, $data->end_time)
+                    ->withMetadata(['slot_duration' => $data->slot_duration])
                     ->save();
             }
 
@@ -62,6 +63,7 @@ class SlotFactory
                     ->availability()
                     ->from($date)
                     ->addPeriod($data->start_time, $data->end_time)
+                    ->withMetadata(['slot_duration' => $data->slot_duration])
                     ->save();
             }
 
