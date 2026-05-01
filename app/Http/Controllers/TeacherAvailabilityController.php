@@ -71,11 +71,7 @@ class TeacherAvailabilityController extends Controller
         $this->authorizeAccess($request, $teacher);
         $this->authorizeOwnership($availability, $teacher);
 
-        try {
-            $this->availability->delete($teacher, $availability);
-        } catch (SlotHasBookingsException) {
-            return back()->withErrors(['schedule' => 'Cannot delete: this date already has bookings.']);
-        }
+        $this->availability->delete($teacher, $availability);
 
         return back();
     }

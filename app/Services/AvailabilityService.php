@@ -2,12 +2,13 @@
 
 namespace App\Services;
 
-use App\Data\DateRangeData;
 use App\Data\SlotData;
 use App\Exceptions\SlotHasBookingsException;
+use App\Mail\BookingCancelled;
 use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Mail;
 use Zap\Models\Schedule;
 
 class AvailabilityService
@@ -43,7 +44,15 @@ class AvailabilityService
             ]);
     }
 
-    public function create(User $teacher, Carbon $startDate, Carbon $endDate, array $days, string $startTime, string $endTime, int $slotDuration): void
+    public function create(
+        User $teacher,
+        Carbon $startDate,
+        Carbon $endDate,
+        array $days,
+        string $startTime,
+        string $endTime,
+        int $slotDuration
+    ): void
     {
         $this->slots->createAvailabilitySlots(
             new SlotData(
@@ -59,9 +68,15 @@ class AvailabilityService
     }
 
     /**
-     * @throws SlotHasBookingsException
+     * @throws SlotHasBookingsException|\Exception
      */
-    public function update(User $teacher, Schedule $availability, string $startTime, string $endTime, int $slotDuration): void
+    public function update(
+        User $teacher,
+        Schedule $availability,
+        string $startTime,
+        string $endTime,
+        int $slotDuration
+    ): void
     {
         $this->slots->updateAvailabilitySlots(
             new SlotData(
@@ -76,17 +91,39 @@ class AvailabilityService
         );
     }
 
-    /**
-     * @throws SlotHasBookingsException
-     */
     public function delete(User $teacher, Schedule $availability): void
     {
-        $this->slots->deleteAvailabilitySlots(
-            new DateRangeData(
-                start_date: $availability->start_date,
-                end_date:   $availability->start_date,
-            ),
-            $teacher
-        );
+        $date = $availability->start_date;
+
+        $appointments = $teacher->schedules()
+            ->appointments()
+            ->forDate($date->toDateString())
+            ->with('periods')
+            ->get();
+
+        $parentIds = $appointments->pluck('metadata.parent_id')->filter()->unique();
+        $parents   = User::query()->whereIn('id', $parentIds)->get()->keyBy('id');
+
+        $teacher->schedules()
+            ->appointments()
+            ->forDate($date->toDateString())
+            ->delete();
+
+        $teacher->schedules()
+            ->availability()
+            ->forDate($date->toDateString())
+            ->delete();
+
+        foreach ($appointments as $appointment) {
+            $parentId = $appointment->metadata['parent_id'] ?? null;
+            if (!$parentId || !$parents->has($parentId)) {
+                continue;
+            }
+
+            $time = Carbon::parse($appointment->periods->first()?->start_time)->format('H:i');
+
+            Mail::to($parents->get($parentId)->email)
+                ->send(new BookingCancelled($teacher, $date, $time));
+        }
     }
 }
