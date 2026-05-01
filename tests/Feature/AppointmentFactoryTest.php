@@ -5,7 +5,7 @@ use App\Data\SlotData;
 use App\Exceptions\DuplicateAppointmentException;
 use App\Models\User;
 use App\Enums\UserRole;
-use App\Services\AppointmentFactory;
+use App\Services\AppointmentService;
 use App\Services\SlotFactory;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Support\Carbon;
@@ -38,7 +38,7 @@ it('creates an appointment for a parent with a teacher', function () {
         end_time: '10:10',
     );
 
-    (new AppointmentFactory())->createAppointment($data, $teacher, $parent);
+    (new AppointmentService())->createAppointment($data, $teacher, $parent);
 
     expect($teacher->appointmentSchedules()->count())->toBe(1);
 
@@ -62,7 +62,7 @@ it('blocks a second appointment for the same parent with the same teacher on the
         end_time: '21:00',
     ), $teacher);
 
-    $factory = new AppointmentFactory();
+    $factory = new AppointmentService();
 
     $factory->createAppointment(new AppointmentData(
         date: $monday->copy(),
@@ -99,7 +99,7 @@ it('allows a different parent to book the same teacher on the same day', functio
         end_time: '21:00',
     ), $teacher);
 
-    $factory = new AppointmentFactory();
+    $factory = new AppointmentService();
 
     $factory->createAppointment(new AppointmentData(
         date: $monday->copy(),
@@ -135,7 +135,7 @@ it('deletes an appointment for a parent', function () {
         end_time: '21:00',
     ), $teacher);
 
-    $factory = new AppointmentFactory();
+    $factory = new AppointmentService();
 
     $factory->createAppointment(new AppointmentData(
         date: $monday->copy(),

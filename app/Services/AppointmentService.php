@@ -8,7 +8,7 @@ use App\Models\User;
 use Illuminate\Support\Carbon;
 use Zap\Facades\Zap;
 
-class AppointmentFactory
+class AppointmentService
 {
     public function createAppointment(AppointmentData $data, User $teacher, User $parent): void
     {

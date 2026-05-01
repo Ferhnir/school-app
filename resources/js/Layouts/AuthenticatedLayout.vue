@@ -19,16 +19,18 @@ const isAdmin = roles.includes('admin');
 const isTeacher = roles.includes('teacher');
 const isParent = roles.includes('parent');
 
+const authUserId = page.props.auth.user.id;
+
 const menu = [
     ...(isAdmin ? [
         { name: 'Dashboard', route: 'admin.dashboard' },
-        { name: 'Users', route: 'admin.users.index' },
-        { name: 'Bookings', route: 'admin.bookings.index' },
+        { name: 'Users',     route: 'admin.users.index' },
+        { name: 'Bookings',  route: 'admin.bookings.index' },
     ] : []),
 
     ...(isTeacher ? [
-        { name: 'My Lessons', route: 'teacher.lessons.index' },
-        { name: 'Bookings', route: 'admin.bookings.index' },
+        { name: 'My Availability', route: 'teachers.availabilities.index', params: { teacher: authUserId }, noLocale: true },
+        { name: 'My Appointments', route: 'teachers.appointments.index',   params: { teacher: authUserId }, noLocale: true },
     ] : []),
 
     ...(isParent ? [
@@ -64,7 +66,9 @@ const menu = [
                                 <NavLink
                                     v-for="navLinkElement in menu"
                                     :key="navLinkElement.route"
-                                    :href="useRouteWithLocale(navLinkElement.route)"
+                                    :href="navLinkElement.noLocale
+                                        ? route(navLinkElement.route, navLinkElement.params ?? {})
+                                        : useRouteWithLocale(navLinkElement.route, navLinkElement.params ?? {})"
                                     :active="route().current(navLinkElement.route + '*')"
                                 >
                                     {{ navLinkElement.name }}

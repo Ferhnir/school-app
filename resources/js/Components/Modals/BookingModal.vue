@@ -31,7 +31,7 @@ const fetchSlots = async () => {
     error.value            = ''
 
     try {
-        const url = route('teacher.slots.index', { teacher: props.teacher.id, date: moment.utc(props.day.date).unix() })
+        const url = route('slots.index', { teacher: props.teacher.id, date: moment.utc(props.day.date).unix() })
         const res = await fetch(url)
         slots.value = await res.json()
     } finally {
@@ -50,7 +50,7 @@ const submit = () => {
     error.value      = ''
 
     router.post(
-        route('teacher.slots.store', { teacher: props.teacher.id, date: moment.utc(props.day.date).unix() }),
+        route('slots.store', { teacher: props.teacher.id, date: moment.utc(props.day.date).unix() }),
         {
             parent_id:  parentId.value,
             start_time: selectedSlot.value.start_time,
@@ -69,6 +69,16 @@ const submit = () => {
 }
 
 const formatTime = (t) => t?.slice(0, 5) ?? t
+
+const slotRowClass = (slot) => {
+    if (!slot.is_available) {
+        return 'bg-gray-50 border-gray-100 text-gray-400 cursor-not-allowed'
+    }
+    if (selectedSlotTime.value === slot.start_time) {
+        return 'bg-indigo-50 border-indigo-300 text-indigo-900 cursor-pointer'
+    }
+    return 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 cursor-pointer'
+}
 
 const inputClass = 'w-full mt-1 border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition'
 const labelClass = 'text-sm font-medium text-gray-700'
@@ -105,23 +115,38 @@ const labelClass = 'text-sm font-medium text-gray-700'
 
                 <!-- Slots -->
                 <div class="mb-6">
-                    <label :class="labelClass">Time slot</label>
+                    <label :class="labelClass">Time slots</label>
 
                     <div v-if="loading" class="mt-2 text-sm text-gray-400">Loading slots…</div>
 
-                    <select
-                        v-else
-                        v-model="selectedSlotTime"
-                        :disabled="slots.length === 0"
-                        :class="[inputClass, slots.length === 0 && 'opacity-50 cursor-not-allowed']"
-                    >
-                        <option value="">
-                            {{ slots.length === 0 ? 'No available slots' : 'Select a time slot' }}
-                        </option>
-                        <option v-for="slot in slots" :key="slot.start_time" :value="slot.start_time">
-                            {{ formatTime(slot.start_time) }} – {{ formatTime(slot.end_time) }}
-                        </option>
-                    </select>
+                    <div v-else-if="slots.length === 0" class="mt-2 text-sm text-gray-400">
+                        No slots available for this day.
+                    </div>
+
+                    <div v-else class="mt-2 space-y-1.5 max-h-56 overflow-y-auto pr-1">
+                        <button
+                            v-for="slot in slots"
+                            :key="slot.start_time"
+                            type="button"
+                            :disabled="!slot.is_available"
+                            class="w-full flex items-center justify-between px-3 py-2 rounded-lg border text-sm transition"
+                            :class="slotRowClass(slot)"
+                            @click="slot.is_available && (selectedSlotTime = slot.start_time)"
+                        >
+                            <span class="font-medium tabular-nums">
+                                {{ formatTime(slot.start_time) }} – {{ formatTime(slot.end_time) }}
+                            </span>
+                            <span v-if="slot.booked_by" class="text-xs text-gray-400">
+                                {{ slot.booked_by }}
+                            </span>
+                            <span v-else-if="selectedSlotTime === slot.start_time" class="text-xs font-medium text-indigo-600">
+                                Selected
+                            </span>
+                            <span v-else class="text-xs text-green-600">
+                                Free
+                            </span>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Parent -->

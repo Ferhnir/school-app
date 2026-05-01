@@ -6,7 +6,7 @@ use App\Models\User;
 use App\Data\DateRangeData;
 use App\Data\SlotData;
 use App\Exceptions\SlotHasBookingsException;
-use Carbon\Carbon;
+use Illuminate\Support\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Support\Facades\DB;
 use Zap\Facades\Zap;
@@ -30,6 +30,7 @@ class SlotFactory
                     ->named('parent-evening-hours')
                     ->availability()
                     ->from($date)
+                    ->to($date->copy()->addDay())
                     ->addPeriod($data->start_time, $data->end_time)
                     ->withMetadata(['slot_duration' => $data->slot_duration])
                     ->save();
@@ -62,6 +63,7 @@ class SlotFactory
                     ->named('parent-evening-hours')
                     ->availability()
                     ->from($date)
+                    ->to($date->copy()->addDay())
                     ->addPeriod($data->start_time, $data->end_time)
                     ->withMetadata(['slot_duration' => $data->slot_duration])
                     ->save();

@@ -21,9 +21,9 @@ use App\Services\SlotFactory;
 #[Description('Seed demo teachers, parents, availability and bookings')]
 class Demo extends Command
 {
-    private const TEACHER_COUNT   = 5;
-    private const PARENT_COUNT    = 30;
-    private const SLOT_DURATIONS  = [5, 10, 15, 20];
+    private const int TEACHER_COUNT     = 5;
+    private const int PARENT_COUNT      = 30;
+    private const array SLOT_DURATIONS  = [5, 10, 15, 20];
 
     private Collection $teachers;
 

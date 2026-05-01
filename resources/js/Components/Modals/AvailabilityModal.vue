@@ -1,23 +1,22 @@
 <script setup>
-import { router } from '@inertiajs/vue3'
-import { ref, computed } from 'vue'
+import { useForm } from '@inertiajs/vue3'
+import { computed } from 'vue'
 
 const props = defineProps({
-    open: Boolean,
-    teachers: Array, // pass from backend
+    open:     Boolean,
+    teachers: Array,
 })
 
-const form = ref({
-    teacher_id: '',
-    start_date: '',
-    end_date: '',
-    days: [],
-    start_time: '',
-    end_time: '',
-    duration: 10,
-    break: 0,
-    max_bookings: 1,
-    notes: '',
+const emit = defineEmits(['close'])
+
+const form = useForm({
+    teacher_id:    '',
+    start_date:    '',
+    end_date:      '',
+    days:          [],
+    start_time:    '',
+    end_time:      '',
+    slot_duration: 10,
 })
 
 const daysOfWeek = [
@@ -40,27 +39,28 @@ for (let h = 8; h < 22; h++) {
     }
 }
 
-const filteredEndTimes = computed(() => {
-    if (!form.value.start_time) return []
-
-    return timeOptions.filter(t => t > form.value.start_time)
-})
+const filteredEndTimes = computed(() =>
+    form.start_time ? timeOptions.filter(t => t > form.start_time) : []
+)
 
 const today = new Date().toISOString().split('T')[0]
-form.value.start_date = today
+form.start_date = today
 
 const toggleDay = (day) => {
-    if (form.value.days.includes(day)) {
-        form.value.days = form.value.days.filter(d => d !== day)
+    if (form.days.includes(day)) {
+        form.days = form.days.filter(d => d !== day)
     } else {
-        form.value.days.push(day)
+        form.days.push(day)
     }
 }
 
 const submit = () => {
-  router.post(route('availability.store'), {
-    // form data
-  })
+    if (!form.teacher_id) return
+
+    form.post(
+        route('teachers.availabilities.store', { teacher: form.teacher_id }),
+        { onSuccess: () => emit('close') }
+    )
 }
 
 const inputClass =
@@ -101,32 +101,22 @@ const labelClass = "text-sm font-medium text-gray-700"
                         <label :class="labelClass">Teacher</label>
                         <select v-model="form.teacher_id" :class="inputClass">
                             <option value="">Select teacher</option>
-                            <option v-for="t in teachers" :key="t.id" :value="t.id">
-                                {{ t.name }}
-                            </option>
+                            <option v-for="t in teachers" :key="t.id" :value="t.id">{{ t.name }}</option>
                         </select>
+                        <p v-if="form.errors.teacher_id" class="mt-1 text-xs text-red-600">{{ form.errors.teacher_id }}</p>
                     </div>
 
                     <!-- Date range -->
                     <div class="grid grid-cols-2 gap-6">
                         <div>
                             <label :class="labelClass">Start date</label>
-                            <input
-                                type="date"
-                                v-model="form.start_date"
-                                :min="today"
-                                :class="inputClass"
-                            />
+                            <input type="date" v-model="form.start_date" :min="today" :class="inputClass" />
+                            <p v-if="form.errors.start_date" class="mt-1 text-xs text-red-600">{{ form.errors.start_date }}</p>
                         </div>
-
                         <div>
                             <label :class="labelClass">End date</label>
-                            <input
-                                type="date"
-                                v-model="form.end_date"
-                                :min="form.start_date || today"
-                                :class="inputClass"
-                            />
+                            <input type="date" v-model="form.end_date" :min="form.start_date || today" :class="inputClass" />
+                            <p v-if="form.errors.end_date" class="mt-1 text-xs text-red-600">{{ form.errors.end_date }}</p>
                         </div>
                     </div>
 
@@ -140,87 +130,58 @@ const labelClass = "text-sm font-medium text-gray-700"
                                 type="button"
                                 @click="toggleDay(day.value)"
                                 :class="[
-                                    'px-3 py-1 rounded-full text-sm border',
+                                    'px-3 py-1 rounded-full text-sm border transition',
                                     form.days.includes(day.value)
                                         ? 'bg-indigo-600 text-white border-indigo-600'
-                                        : 'bg-white text-gray-600 border-gray-300'
+                                        : 'bg-white text-gray-600 border-gray-300 hover:border-indigo-400'
                                 ]"
-                            >
-                                {{ day.label }}
-                            </button>
+                            >{{ day.label }}</button>
                         </div>
+                        <p v-if="form.errors.days" class="mt-1 text-xs text-red-600">{{ form.errors.days }}</p>
                     </div>
 
                     <!-- Time -->
                     <div class="grid grid-cols-2 gap-6">
                         <div>
                             <label :class="labelClass">Start time</label>
-                            <select v-model="form.start_time" :class="inputClass">
+                            <select v-model="form.start_time" :class="inputClass" @change="form.end_time = ''">
                                 <option value="">Select time</option>
-                                <option v-for="time in timeOptions" :key="time" :value="time">
-                                    {{ time }}
-                                </option>
+                                <option v-for="time in timeOptions" :key="time" :value="time">{{ time }}</option>
                             </select>
+                            <p v-if="form.errors.start_time" class="mt-1 text-xs text-red-600">{{ form.errors.start_time }}</p>
                         </div>
-
                         <div>
                             <label :class="labelClass">End time</label>
-                            <select
-                                v-model="form.end_time"
-                                :disabled="!form.start_time"
-                                :class="[inputClass, !form.start_time && 'bg-gray-100 cursor-not-allowed']"
-                            >
+                            <select v-model="form.end_time" :disabled="!form.start_time" :class="[inputClass, !form.start_time && 'opacity-50 cursor-not-allowed']">
                                 <option value="">Select time</option>
-
-                                <option
-                                    v-for="time in filteredEndTimes"
-                                    :key="time"
-                                    :value="time"
-                                >
-                                    {{ time }}
-                                </option>
+                                <option v-for="time in filteredEndTimes" :key="time" :value="time">{{ time }}</option>
                             </select>
+                            <p v-if="form.errors.end_time" class="mt-1 text-xs text-red-600">{{ form.errors.end_time }}</p>
                         </div>
                     </div>
 
-                    <!-- Slot config -->
-                    <div class="grid grid-cols-3 gap-6">
-                        <div>
-                            <label :class="labelClass">Duration (min)</label>
-                            <select v-model="form.duration" :class="inputClass">
-                                <option :value="5">5</option>
-                                <option :value="10">10</option>
-                                <option :value="15">15</option>
-                                <option :value="20">20</option>
-                                <option :value="30">30</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- Notes -->
+                    <!-- Slot duration -->
                     <div>
-                        <label :class="labelClass">Notes</label>
-                        <textarea
-                            v-model="form.notes"
-                            rows="3"
-                            :class="inputClass"
-                        ></textarea>
+                        <label :class="labelClass">Slot duration (min)</label>
+                        <select v-model="form.slot_duration" :class="inputClass">
+                            <option :value="5">5</option>
+                            <option :value="10">10</option>
+                            <option :value="15">15</option>
+                            <option :value="20">20</option>
+                            <option :value="30">30</option>
+                        </select>
                     </div>
 
                     <div class="flex justify-end gap-3 pt-4">
                         <button
-                            @click="$emit('close')"
+                            @click="emit('close')"
                             class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
-                        >
-                            Cancel
-                        </button>
-
+                        >Cancel</button>
                         <button
                             @click="submit"
-                            class="px-5 py-2 bg-indigo-600 text-white rounded-xl shadow hover:bg-indigo-700 transition"
-                        >
-                            Create Slots
-                        </button>
+                            :disabled="form.processing"
+                            class="px-5 py-2 bg-indigo-600 text-white rounded-xl shadow hover:bg-indigo-700 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                        >{{ form.processing ? 'Saving…' : 'Create Slots' }}</button>
                     </div>
 
                 </div>
