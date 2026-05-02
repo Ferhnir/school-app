@@ -30,7 +30,6 @@ const menu = [
 
     ...(isTeacher ? [
         { name: 'My Availability', route: 'teachers.availabilities.index', params: { teacher: authUserId }, noLocale: true },
-        { name: 'My Appointments', route: 'teachers.appointments.index',   params: { teacher: authUserId }, noLocale: true },
     ] : []),
 
     ...(isParent ? [

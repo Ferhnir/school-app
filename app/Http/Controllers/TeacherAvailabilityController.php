@@ -13,6 +13,8 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\Response as HttpResponse;
 use Zap\Models\Schedule;
 
 class TeacherAvailabilityController extends Controller
@@ -64,6 +66,42 @@ class TeacherAvailabilityController extends Controller
         }
 
         return back();
+    }
+
+    public function download(Request $request, User $teacher, Schedule $availability): HttpResponse
+    {
+        $this->authorizeAccess($request, $teacher);
+        $this->authorizeOwnership($availability, $teacher);
+
+        $date = $availability->start_date;
+
+        $appointments = $teacher->schedules()
+            ->appointments()
+            ->forDate($date->toDateString())
+            ->with('periods')
+            ->get();
+
+        $parentIds = $appointments->pluck('metadata.parent_id')->filter()->unique();
+        $parents   = User::whereIn('id', $parentIds)->get()->keyBy('id');
+
+        $rows = $appointments
+            ->map(function ($appt) use ($parents) {
+                $parentId = $appt->metadata['parent_id'] ?? null;
+                $parent   = $parentId ? $parents->get($parentId) : null;
+                $time     = Carbon::parse($appt->periods->first()?->start_time)->format('H:i');
+
+                return [$parent?->name ?? '—', $parent?->email ?? '—', $time];
+            })
+            ->sortBy(fn ($row) => $row[2])
+            ->values();
+
+        $pdf = Pdf::loadView('pdf.bookings', [
+            'teacher' => $teacher,
+            'date'    => $date,
+            'rows'    => $rows,
+        ])->setPaper('a4');
+
+        return $pdf->download('bookings-' . $date->toDateString() . '.pdf');
     }
 
     public function destroy(Request $request, User $teacher, Schedule $availability): RedirectResponse

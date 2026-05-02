@@ -62,6 +62,9 @@ Route::middleware([
     Route::resource('teachers.availabilities', TeacherAvailabilityController::class)
         ->only(['index', 'store', 'update', 'destroy']);
 
+    Route::get('/teachers/{teacher}/availabilities/{availability}/download', [TeacherAvailabilityController::class, 'download'])
+        ->name('teachers.availabilities.download');
+
 
     Route::get('/teachers/{teacher}/date/{date}',  [TeacherSlotsController::class, 'index'])
         ->name('slots.index');
