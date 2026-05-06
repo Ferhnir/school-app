@@ -33,6 +33,7 @@ const menu = [
     ] : []),
 
     ...(isParent ? [
+        { name: 'Today',    route: 'parent.dashboard' },
         { name: 'Bookings', route: 'parent.bookings.index' },
     ] : []),
 ];
@@ -203,10 +204,14 @@ const menu = [
                 >
                     <div class="space-y-1 pb-3 pt-2">
                         <ResponsiveNavLink
-                            :href="useRouteWithLocale('dashboard')"
-                            :active="route().current('dashboard')"
+                            v-for="navLinkElement in menu"
+                            :key="navLinkElement.route"
+                            :href="navLinkElement.noLocale
+                                ? route(navLinkElement.route, navLinkElement.params ?? {})
+                                : useRouteWithLocale(navLinkElement.route, navLinkElement.params ?? {})"
+                            :active="route().current(navLinkElement.route + '*')"
                         >
-                            Dashboard
+                            {{ navLinkElement.name }}
                         </ResponsiveNavLink>
                     </div>
 

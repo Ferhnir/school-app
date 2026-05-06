@@ -3,6 +3,8 @@
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\BookingsController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\ParentBookingController;
+use App\Http\Controllers\ParentBookingsController;
 use App\Http\Controllers\ParentDashboardController;
 use App\Http\Controllers\TeacherAppointmentController;
 use App\Http\Controllers\TeacherAvailabilityController;
@@ -31,9 +33,22 @@ Route::group([
             ->middleware('role:' . UserRole::ADMIN->value)
             ->name('admin.dashboard');
 
-        Route::get('/parent/dashboard', [ParentDashboardController::class, 'index'])
+        Route::middleware('role:' . UserRole::PARENT->value)->group(function () {
+            Route::get('/parent/dashboard', [ParentDashboardController::class, 'index'])
+                ->name('parent.dashboard');
+            Route::get('/parent/dashboard/download', [ParentDashboardController::class, 'download'])
+                ->name('parent.dashboard.download');
+            Route::post('/parent/dashboard/email', [ParentDashboardController::class, 'email'])
+                ->name('parent.dashboard.email');
+            Route::get('/parent/calendar/{date}/download', [ParentDashboardController::class, 'downloadDate'])
+                ->name('parent.calendar.download');
+            Route::post('/parent/calendar/{date}/email', [ParentDashboardController::class, 'emailDate'])
+                ->name('parent.calendar.email');
+        });
+
+        Route::get('/parent/bookings', [ParentBookingsController::class, 'index'])
             ->middleware('role:' . UserRole::PARENT->value)
-            ->name('parent.dashboard');
+            ->name('parent.bookings.index');
 
         Route::get('/teacher/dashboard', [TeacherDashboardController::class, 'index'])
             ->middleware(UserRole::middleware(UserRole::TEACHER))
@@ -52,6 +67,20 @@ Route::group([
     });
 });
 
+//PARENTS
+Route::middleware([
+    'auth',
+    'verified',
+    'role:' . UserRole::PARENT->value,
+])->group(function () {
+    Route::get('/teachers/{teacher}/date/{date}/slots', [TeacherSlotsController::class, 'index'])
+        ->name('parent.slots.index');
+    Route::post('/teachers/{teacher}/date/{date}/book', [ParentBookingController::class, 'store'])
+        ->name('parent.slots.store');
+    Route::delete('/teachers/{teacher}/date/{date}/book', [ParentBookingController::class, 'destroy'])
+        ->name('parent.slots.destroy');
+});
+
 //TEACHERS
 Route::middleware([
     'auth',
@@ -65,17 +94,17 @@ Route::middleware([
     Route::get('/teachers/{teacher}/availabilities/{availability}/download', [TeacherAvailabilityController::class, 'download'])
         ->name('teachers.availabilities.download');
 
+    Route::controller(TeacherSlotsController::class)->group(function () {
+        Route::get('/teachers/{teacher}/date/{date}', 'index')->name('slots.index');
+        Route::post('/teachers/{teacher}/date/{date}', 'store')->name('slots.store');
+    });
 
-    Route::get('/teachers/{teacher}/date/{date}',  [TeacherSlotsController::class, 'index'])
-        ->name('slots.index');
-    Route::post('/teachers/{teacher}/date/{date}', [TeacherSlotsController::class, 'store'])
-        ->name('slots.store');
-
-    Route::get('/teachers/{teacher}/appointments',                  [TeacherAppointmentController::class, 'index'])->name('teachers.appointments.index');
-    Route::delete('/teachers/{teacher}/appointments/{appointment}', [TeacherAppointmentController::class, 'destroy'])->name('teachers.appointments.destroy');
+    Route::controller(TeacherAppointmentController::class)->group(function () {
+        Route::get('/teachers/{teacher}/appointments', 'index')->name('teachers.appointments.index');
+        Route::delete('/teachers/{teacher}/appointments/{appointment}', 'destroy')
+            ->name('teachers.appointments.destroy');
+    });
 });
-
-
 
 Route::get('/lang/{locale}', function ($locale) {
     app()->setLocale($locale);
