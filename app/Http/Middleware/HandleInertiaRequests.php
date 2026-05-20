@@ -36,6 +36,7 @@ class HandleInertiaRequests extends Middleware
                 'roles' => $request->user()?->getRoleNames(),
             ],
             'locale' => app()->getLocale(),
+            'flash'  => $request->session()->only(['message', 'error']),
         ];
     }
 }

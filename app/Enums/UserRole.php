@@ -12,4 +12,9 @@ enum UserRole: string
     {
         return self::cases();
     }
+
+    public static function middleware(self ...$roles): string
+    {
+        return 'role:' . implode('|', array_map(fn (self $r) => $r->value, $roles));
+    }
 }

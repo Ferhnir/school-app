@@ -14,7 +14,7 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        $users = [
+        $admins = [
             [
                 'name' => 'Ferhnir',
                 'email' => 'zax1984@gmail.com',
@@ -27,7 +27,7 @@ class UserSeeder extends Seeder
             ]
         ];
 
-        foreach($users as $userElement){
+        foreach($admins as $userElement){
             $user = User::query()->firstOrCreate(['email' => $userElement['email']], $userElement);
 
             $user->assignRole(UserRole::ADMIN->value);

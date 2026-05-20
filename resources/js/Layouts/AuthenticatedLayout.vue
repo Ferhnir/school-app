@@ -19,17 +19,21 @@ const isAdmin = roles.includes('admin');
 const isTeacher = roles.includes('teacher');
 const isParent = roles.includes('parent');
 
+const authUserId = page.props.auth.user.id;
+
 const menu = [
     ...(isAdmin ? [
         { name: 'Dashboard', route: 'admin.dashboard' },
-        { name: 'Users', route: 'admin.users.index' },
+        { name: 'Users',     route: 'admin.users.index' },
+        { name: 'Bookings',  route: 'admin.bookings.index' },
     ] : []),
 
     ...(isTeacher ? [
-        { name: 'My Lessons', route: 'teacher.lessons.index' },
+        { name: 'My Availability', route: 'teachers.availabilities.index', params: { teacher: authUserId }, noLocale: true },
     ] : []),
 
     ...(isParent ? [
+        { name: 'Today',    route: 'parent.dashboard' },
         { name: 'Bookings', route: 'parent.bookings.index' },
     ] : []),
 ];
@@ -62,7 +66,9 @@ const menu = [
                                 <NavLink
                                     v-for="navLinkElement in menu"
                                     :key="navLinkElement.route"
-                                    :href="useRouteWithLocale(navLinkElement.route)"
+                                    :href="navLinkElement.noLocale
+                                        ? route(navLinkElement.route, navLinkElement.params ?? {})
+                                        : useRouteWithLocale(navLinkElement.route, navLinkElement.params ?? {})"
                                     :active="route().current(navLinkElement.route + '*')"
                                 >
                                     {{ navLinkElement.name }}
@@ -198,10 +204,14 @@ const menu = [
                 >
                     <div class="space-y-1 pb-3 pt-2">
                         <ResponsiveNavLink
-                            :href="useRouteWithLocale('dashboard')"
-                            :active="route().current('dashboard')"
+                            v-for="navLinkElement in menu"
+                            :key="navLinkElement.route"
+                            :href="navLinkElement.noLocale
+                                ? route(navLinkElement.route, navLinkElement.params ?? {})
+                                : useRouteWithLocale(navLinkElement.route, navLinkElement.params ?? {})"
+                            :active="route().current(navLinkElement.route + '*')"
                         >
-                            Dashboard
+                            {{ navLinkElement.name }}
                         </ResponsiveNavLink>
                     </div>
 
