@@ -6,9 +6,9 @@ use App\Exceptions\DuplicateAppointmentException;
 use App\Models\User;
 use App\Enums\UserRole;
 use App\Services\AppointmentService;
-use App\Services\SlotFactory;
+use App\Services\AvailabilitySlots;
 use Database\Seeders\RoleSeeder;
-use Illuminate\Support\Carbon;
+use Carbon\Carbon;
 
 beforeEach(function () {
     (new RoleSeeder())->run();
@@ -24,7 +24,7 @@ it('creates an appointment for a parent with a teacher', function () {
 
     $monday = Carbon::now()->next(Carbon::MONDAY);
 
-    (new SlotFactory())->createAvailabilitySlots(new SlotData(
+    (new AvailabilitySlots())->create(new SlotData(
         start_date: $monday->copy(),
         end_date: $monday->copy(),
         days: ['monday'],
@@ -38,7 +38,7 @@ it('creates an appointment for a parent with a teacher', function () {
         end_time: '10:10',
     );
 
-    (new AppointmentService())->createAppointment($data, $teacher, $parent);
+    (new AppointmentService())->create($data, $teacher, $parent);
 
     expect($teacher->appointmentSchedules()->count())->toBe(1);
 
@@ -54,7 +54,7 @@ it('blocks a second appointment for the same parent with the same teacher on the
 
     $monday = Carbon::now()->next(Carbon::MONDAY);
 
-    (new SlotFactory())->createAvailabilitySlots(new SlotData(
+    (new AvailabilitySlots())->create(new SlotData(
         start_date: $monday->copy(),
         end_date: $monday->copy(),
         days: ['monday'],
@@ -64,13 +64,13 @@ it('blocks a second appointment for the same parent with the same teacher on the
 
     $factory = new AppointmentService();
 
-    $factory->createAppointment(new AppointmentData(
+    $factory->create(new AppointmentData(
         date: $monday->copy(),
         start_time: '10:00',
         end_time: '10:10',
     ), $teacher, $parent);
 
-    expect(fn () => $factory->createAppointment(new AppointmentData(
+    expect(fn () => $factory->create(new AppointmentData(
         date: $monday->copy(),
         start_time: '11:00',
         end_time: '11:10',
@@ -91,7 +91,7 @@ it('allows a different parent to book the same teacher on the same day', functio
 
     $monday = Carbon::now()->next(Carbon::MONDAY);
 
-    (new SlotFactory())->createAvailabilitySlots(new SlotData(
+    (new AvailabilitySlots())->create(new SlotData(
         start_date: $monday->copy(),
         end_date: $monday->copy(),
         days: ['monday'],
@@ -101,13 +101,13 @@ it('allows a different parent to book the same teacher on the same day', functio
 
     $factory = new AppointmentService();
 
-    $factory->createAppointment(new AppointmentData(
+    $factory->create(new AppointmentData(
         date: $monday->copy(),
         start_time: '10:00',
         end_time: '10:10',
     ), $teacher, $parentOne);
 
-    $factory->createAppointment(new AppointmentData(
+    $factory->create(new AppointmentData(
         date: $monday->copy(),
         start_time: '10:10',
         end_time: '10:20',
@@ -127,7 +127,7 @@ it('deletes an appointment for a parent', function () {
 
     $monday = Carbon::now()->next(Carbon::MONDAY);
 
-    (new SlotFactory())->createAvailabilitySlots(new SlotData(
+    (new AvailabilitySlots())->create(new SlotData(
         start_date: $monday->copy(),
         end_date: $monday->copy(),
         days: ['monday'],
@@ -137,7 +137,7 @@ it('deletes an appointment for a parent', function () {
 
     $factory = new AppointmentService();
 
-    $factory->createAppointment(new AppointmentData(
+    $factory->create(new AppointmentData(
         date: $monday->copy(),
         start_time: '10:00',
         end_time: '10:10',
@@ -145,7 +145,7 @@ it('deletes an appointment for a parent', function () {
 
     expect($teacher->appointmentSchedules()->count())->toBe(1);
 
-    $factory->deleteAppointment($monday->copy(), $teacher, $parent);
+    $factory->delete($monday->copy(), $teacher, $parent);
 
     expect($teacher->appointmentSchedules()->count())->toBe(0);
 

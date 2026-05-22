@@ -4,7 +4,6 @@ use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\BookingsController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\ParentBookingController;
-use App\Http\Controllers\ParentBookingsController;
 use App\Http\Controllers\ParentDashboardController;
 use App\Http\Controllers\TeacherAppointmentController;
 use App\Http\Controllers\TeacherAvailabilityController;
@@ -46,7 +45,7 @@ Route::group([
                 ->name('parent.calendar.email');
         });
 
-        Route::get('/parent/bookings', [ParentBookingsController::class, 'index'])
+        Route::get('/parent/bookings', [ParentBookingController::class, 'index'])
             ->middleware('role:' . UserRole::PARENT->value)
             ->name('parent.bookings.index');
 

@@ -6,6 +6,7 @@ use App\Enums\UserRole;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\Response;
 
 class DashboardController extends Controller
 {
@@ -13,15 +14,15 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
 
-        $rolesArr = $user->roles->pluck('name')->toArray();
-
-        $locale = session()->get('locale') ?? 'en';
-
-        return match (true) {
-            in_array(UserRole::ADMIN->value, $rolesArr) => redirect()->route('admin.dashboard', [$locale]),
-            in_array(UserRole::TEACHER->value, $rolesArr) => redirect()->route('teacher.dashboard', [$locale]),
-            in_array(UserRole::PARENT->value, $rolesArr) => redirect()->route('parent.dashboard', [$locale]),
-            default => abort(403),
+        $route =  match (true) {
+            $user->hasRole(UserRole::ADMIN->value) => 'admin.dashboard',
+            $user->hasRole(UserRole::TEACHER->value) =>'teacher.dashboard',
+            $user->hasRole(UserRole::PARENT->value) => 'parent.dashboard',
+            default => false,
         };
+
+        if (! $route) abort(code: Response::HTTP_FORBIDDEN);
+
+        return redirect()->route($route, [session()->get('locale') ?? 'en']);
     }
 }

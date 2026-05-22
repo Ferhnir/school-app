@@ -8,7 +8,7 @@ use App\Http\Requests\StoreTeacherAvailabilityRequest;
 use App\Http\Requests\UpdateTeacherAvailabilityRequest;
 use App\Models\User;
 use App\Services\AvailabilityService;
-use Illuminate\Support\Carbon;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;

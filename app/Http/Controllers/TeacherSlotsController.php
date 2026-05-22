@@ -7,7 +7,7 @@ use App\Exceptions\DuplicateAppointmentException;
 use App\Http\Requests\StoreBookingRequest;
 use App\Models\User;
 use App\Services\AppointmentService;
-use Illuminate\Support\Carbon;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
@@ -69,7 +69,7 @@ class TeacherSlotsController extends Controller
         $endTime      = Carbon::parse($request->start_time)->addMinutes($duration)->format('H:i');
 
         try {
-            (new AppointmentService())->createAppointment(
+            (new AppointmentService())->create(
                 new AppointmentData(
                     date:       $date,
                     start_time: $startTime,

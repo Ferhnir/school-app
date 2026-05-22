@@ -6,7 +6,7 @@ use App\Enums\UserRole;
 use App\Models\User;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
+use Carbon\Carbon;
 use Inertia\Inertia;
 use Inertia\Response;
 

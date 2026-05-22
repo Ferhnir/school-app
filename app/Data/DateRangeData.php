@@ -2,7 +2,7 @@
 
 namespace App\Data;
 
-use Illuminate\Support\Carbon;
+use Carbon\Carbon;
 
 class DateRangeData
 {

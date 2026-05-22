@@ -7,8 +7,8 @@ use App\Enums\UserRole;
 use App\Data\DateRangeData;
 use App\Data\SlotData;
 use App\Exceptions\SlotHasBookingsException;
-use App\Services\SlotFactory;
-use Illuminate\Support\Carbon;
+use App\Services\AvailabilitySlots;
+use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Zap\Facades\Zap;
 
@@ -38,8 +38,8 @@ it('Creates availability slots for teacher', function () {
         end_time: '21:00',
     );
 
-    $slotFactoryService = new SlotFactory();
-    $slotFactoryService->createAvailabilitySlots($data, $teacher);
+    $slotFactoryService = new AvailabilitySlots();
+    $slotFactoryService->create($data, $teacher);
 
     $dates = CarbonPeriod::create($data->start_date, $data->end_date)
         ->filter(fn (Carbon $date) => in_array(strtolower($date->englishDayOfWeek), $data->days));
@@ -63,12 +63,12 @@ it('deletes one availability slot leaving 9 remaining', function () {
         end_time: '21:00',
     );
 
-    $service = new SlotFactory();
-    $service->createAvailabilitySlots($data, $teacher);
+    $service = new AvailabilitySlots();
+    $service->create($data, $teacher);
 
     expect($teacher->availabilitySchedules()->count())->toBe(10);
 
-    $service->deleteAvailabilitySlots(
+    $service->delete(
         new DateRangeData(
             start_date: $monday->copy(),
             end_date: $monday->copy(),
@@ -95,8 +95,8 @@ it('updates availability slot times for a date range', function () {
         end_time: '21:00',
     );
 
-    $service = new SlotFactory();
-    $service->createAvailabilitySlots($data, $teacher);
+    $service = new AvailabilitySlots();
+    $service->create($data, $teacher);
 
     expect($teacher->availabilitySchedules()->count())->toBe(5);
 
@@ -108,7 +108,7 @@ it('updates availability slot times for a date range', function () {
         end_time: '18:00',
     );
 
-    $service->updateAvailabilitySlots($updatedData, $teacher);
+    $service->update($updatedData, $teacher);
 
     expect($teacher->availabilitySchedules()->count())->toBe(5);
 
@@ -133,8 +133,8 @@ it('blocks update when booked appointments exist in the date range', function ()
         end_time: '21:00',
     );
 
-    $service = new SlotFactory();
-    $service->createAvailabilitySlots($data, $teacher);
+    $service = new AvailabilitySlots();
+    $service->create($data, $teacher);
 
     Zap::for($teacher)
         ->named('Parent Evening')
@@ -143,7 +143,7 @@ it('blocks update when booked appointments exist in the date range', function ()
         ->addPeriod('10:00', '10:10')
         ->save();
 
-    expect(fn () => $service->updateAvailabilitySlots($data, $teacher))
+    expect(fn () => $service->update($data, $teacher))
         ->toThrow(SlotHasBookingsException::class);
 
 });
@@ -163,8 +163,8 @@ it('blocks delete when booked appointments exist in the date range', function ()
         end_time: '21:00',
     );
 
-    $service = new SlotFactory();
-    $service->createAvailabilitySlots($data, $teacher);
+    $service = new AvailabilitySlots();
+    $service->create($data, $teacher);
 
     Zap::for($teacher)
         ->named('Parent Evening')
@@ -173,7 +173,7 @@ it('blocks delete when booked appointments exist in the date range', function ()
         ->addPeriod('10:00', '10:10')
         ->save();
 
-    expect(fn () => $service->deleteAvailabilitySlots(new DateRangeData(
+    expect(fn () => $service->delete(new DateRangeData(
         start_date: $monday->copy(),
         end_date: $monday->copy()->addDays(4),
     ), $teacher))->toThrow(SlotHasBookingsException::class);
@@ -196,8 +196,8 @@ it('stores slot_duration in availability schedule metadata', function () {
         slot_duration: 15,
     );
 
-    $service = new SlotFactory();
-    $service->createAvailabilitySlots($data, $teacher);
+    $service = new AvailabilitySlots();
+    $service->create($data, $teacher);
 
     $schedule = $teacher->availabilitySchedules()->first();
     expect($schedule->metadata['slot_duration'])->toBe(15);
@@ -220,8 +220,8 @@ it('updates slot_duration in metadata when availability is updated', function ()
         slot_duration: 10,
     );
 
-    $service = new SlotFactory();
-    $service->createAvailabilitySlots($data, $teacher);
+    $service = new AvailabilitySlots();
+    $service->create($data, $teacher);
 
     expect($teacher->availabilitySchedules()->first()->metadata['slot_duration'])->toBe(10);
 
@@ -234,9 +234,43 @@ it('updates slot_duration in metadata when availability is updated', function ()
         slot_duration: 20,
     );
 
-    $service->updateAvailabilitySlots($updated, $teacher);
+    $service->update($updated, $teacher);
 
     expect($teacher->availabilitySchedules()->first()->metadata['slot_duration'])->toBe(20);
+
+});
+
+it('creates slots for every selected weekday in a Mon-Fri range without skipping days', function () {
+
+    $teacher = User::factory()->create();
+    $teacher->assignRole(UserRole::TEACHER->value);
+
+    // May 18 (Mon) – May 22 (Fri) 2026: the range the user manually tested
+    $monday    = Carbon::parse('2026-05-18');
+    $friday    = Carbon::parse('2026-05-22');
+
+    $data = new SlotData(
+        start_date: $monday,
+        end_date:   $friday,
+        days:       ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
+        start_time: '09:00',
+        end_time:   '17:00',
+    );
+
+    $service = new AvailabilitySlots();
+    $service->create($data, $teacher);
+
+    // All five weekdays must get a slot — bug caused only Mon, Wed, Fri to be created
+    expect($teacher->availabilitySchedules()->count())->toBe(5);
+
+    $created = $teacher->availabilitySchedules()
+        ->get()
+        ->map(fn ($s) => Carbon::parse($s->start_date)->format('l'))
+        ->sort()
+        ->values()
+        ->toArray();
+
+    expect($created)->toBe(['Friday', 'Monday', 'Thursday', 'Tuesday', 'Wednesday']);
 
 });
 
@@ -262,8 +296,8 @@ it('Creates more availability slots for teacher on already existing ones', funct
     );
 
     //SET ONE
-    $slotFactoryService = new SlotFactory();
-    $slotFactoryService->createAvailabilitySlots($dataSetOne, $teacher);
+    $slotFactoryService = new AvailabilitySlots();
+    $slotFactoryService->create($dataSetOne, $teacher);
 
     $datesFromSetOne = CarbonPeriod::create($dataSetOne->start_date, $dataSetOne->end_date)
         ->filter(fn (Carbon $date) => in_array(strtolower($date->englishDayOfWeek), $dataSetOne->days));
@@ -271,7 +305,7 @@ it('Creates more availability slots for teacher on already existing ones', funct
     expect($teacher->availabilitySchedules()->count())->toBe(count($datesFromSetOne));
 
     //SET TWO
-    $slotFactoryService->createAvailabilitySlots($dataSetTwo, $teacher);
+    $slotFactoryService->create($dataSetTwo, $teacher);
 
     $datesFromSetTwo = CarbonPeriod::create($dataSetTwo->start_date, $dataSetTwo->end_date)
         ->filter(fn (Carbon $date) => in_array(strtolower($date->englishDayOfWeek), $dataSetTwo->days));
