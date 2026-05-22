@@ -6,14 +6,19 @@ use App\Models\User;
 use App\Data\DateRangeData;
 use App\Data\SlotData;
 use App\Exceptions\SlotHasBookingsException;
-use Illuminate\Support\Carbon;
+use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Support\Facades\DB;
 use Zap\Facades\Zap;
+use Throwable;
+use Exception;
 
-class SlotFactory
+class AvailabilitySlots
 {
-    public function createAvailabilitySlots(SlotData $data, User $teacher): void
+    /**
+     * @throws Throwable
+     */
+    public function create(SlotData $data, User $teacher): void
     {
         try {
             DB::beginTransaction();
@@ -22,7 +27,7 @@ class SlotFactory
                 ->filter(fn (Carbon $date) => in_array(strtolower($date->englishDayOfWeek), $data->days));
 
             foreach ($dates as $date) {
-                if ($teacher->schedulesForDate($date)->exists()) {
+                if ($teacher->availabilitySchedules()->whereDate('start_date', $date)->exists()) {
                     continue;
                 }
 
@@ -37,13 +42,13 @@ class SlotFactory
             }
 
             DB::commit();
-        } catch (\Exception $e) {
+        } catch (Exception|Throwable $e) {
             DB::rollBack();
             throw $e;
         }
     }
 
-    public function updateAvailabilitySlots(SlotData $data, User $teacher): void
+    public function update(SlotData $data, User $teacher): void
     {
         $this->guardAgainstBookedSlots($data->start_date, $data->end_date, $teacher);
 
@@ -76,7 +81,7 @@ class SlotFactory
         }
     }
 
-    public function deleteAvailabilitySlots(DateRangeData $data, User $teacher): void
+    public function delete(DateRangeData $data, User $teacher): void
     {
         $this->guardAgainstBookedSlots($data->start_date, $data->end_date, $teacher);
 

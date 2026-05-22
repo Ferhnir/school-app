@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\UserRole;
 use App\Models\User;
 use App\Services\AppointmentService;
-use Illuminate\Support\Carbon;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -55,7 +55,7 @@ class TeacherAppointmentController extends Controller
         $parentId = $appointment->metadata['parent_id'] ?? null;
         $parent   = $parentId ? User::find($parentId) : null;
 
-        (new AppointmentService())->deleteAppointment(
+        (new AppointmentService())->delete(
             $appointment->start_date,
             $teacher,
             $parent

@@ -2,7 +2,7 @@
 
 namespace App\Data;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
+use Carbon\Carbon;
 
 class SlotData
 {

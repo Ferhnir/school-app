@@ -6,14 +6,18 @@ use App\Data\SlotData;
 use App\Exceptions\SlotHasBookingsException;
 use App\Mail\BookingCancelled;
 use App\Models\User;
-use Illuminate\Support\Carbon;
+use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Mail;
 use Zap\Models\Schedule;
+use Throwable;
+use Exception;
 
-class AvailabilityService
+class AvailabilityService extends FactoryService
 {
-    public function __construct(private SlotFactory $slots) {}
+    public function __construct(
+        private AvailabilitySlots $slots
+    ) {}
 
     public function getUpcoming(User $teacher, int $days = 14): Collection
     {
@@ -25,7 +29,8 @@ class AvailabilityService
             ->whereBetween('start_date', [$today->toDateString(), $end])
             ->get()
             ->groupBy(fn ($s) => $s->start_date->toDateString())
-            ->map->count();
+            ->map
+            ->count();
 
         return $teacher->schedules()
             ->availability()
@@ -44,6 +49,9 @@ class AvailabilityService
             ]);
     }
 
+    /**
+     * @throws Throwable
+     */
     public function create(
         User $teacher,
         Carbon $startDate,
@@ -54,7 +62,7 @@ class AvailabilityService
         int $slotDuration
     ): void
     {
-        $this->slots->createAvailabilitySlots(
+        $this->slots->create(
             new SlotData(
                 start_date:    $startDate,
                 end_date:      $endDate,
@@ -78,7 +86,7 @@ class AvailabilityService
         int $slotDuration
     ): void
     {
-        $this->slots->updateAvailabilitySlots(
+        $this->slots->update(
             new SlotData(
                 start_date:    $availability->start_date,
                 end_date:      $availability->start_date,

@@ -42,9 +42,9 @@ const menu = [
 
 <template>
     <div>
-        <div class="min-h-screen bg-gray-100">
+        <div class="min-h-screen bg-[#2060A0]">
             <nav
-                class="border-b border-gray-100 bg-white"
+                class="bg-[#2060A0] border-b border-[#1a5088]"
             >
                 <!-- Primary Navigation Menu -->
                 <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -54,7 +54,7 @@ const menu = [
                             <div class="flex shrink-0 items-center">
                                 <Link :href="useRouteWithLocale('dashboard')">
                                     <ApplicationLogo
-                                        class="block h-9 w-auto fill-current text-gray-800"
+                                        class="block h-9 w-auto fill-current text-white"
                                     />
                                 </Link>
                             </div>
@@ -82,25 +82,25 @@ const menu = [
                             <div class="py-2 px-4 flex gap-2 text-sm">
                                 <a
                                     :href="switchLocale('en')"
-                                    :class="$page.props.locale === 'en' ? 'font-bold text-black' : 'text-gray-600'"
+                                    :class="$page.props.locale === 'en' ? 'font-bold text-white' : 'text-white/70 hover:text-white'"
                                 >
                                     EN
                                 </a>
 
-                                <span class="text-gray-300">|</span>
+                                <span class="text-white/40">|</span>
 
                                 <a
                                     :href="switchLocale('pl')"
-                                    :class="$page.props.locale === 'pl' ? 'font-bold text-black' : 'text-gray-600'"
+                                    :class="$page.props.locale === 'pl' ? 'font-bold text-white' : 'text-white/70 hover:text-white'"
                                 >
                                     PL
                                 </a>
 
-                                <span class="text-gray-300">|</span>
+                                <span class="text-white/40">|</span>
 
                                 <a
                                     :href="switchLocale('ua')"
-                                    :class="$page.props.locale === 'ua' ? 'font-bold text-black' : 'text-gray-600'"
+                                    :class="$page.props.locale === 'ua' ? 'font-bold text-white' : 'text-white/70 hover:text-white'"
                                 >
                                     UA
                                 </a>
@@ -113,7 +113,7 @@ const menu = [
                                         <span class="inline-flex rounded-md">
                                             <button
                                                 type="button"
-                                                class="inline-flex items-center rounded-md border border-transparent bg-white px-3 py-2 text-sm font-medium leading-4 text-gray-500 transition duration-150 ease-in-out hover:text-gray-700 focus:outline-none"
+                                                class="inline-flex items-center rounded-md border border-transparent bg-transparent px-3 py-2 text-sm font-medium leading-4 text-white transition duration-150 ease-in-out hover:text-indigo-100 focus:outline-none"
                                             >
                                                 {{ $page.props.auth.user.name }}
 
@@ -158,7 +158,7 @@ const menu = [
                                     showingNavigationDropdown =
                                         !showingNavigationDropdown
                                 "
-                                class="inline-flex items-center justify-center rounded-md p-2 text-gray-400 transition duration-150 ease-in-out hover:bg-gray-100 hover:text-gray-500 focus:bg-gray-100 focus:text-gray-500 focus:outline-none"
+                                class="inline-flex items-center justify-center rounded-md p-2 text-white/70 transition duration-150 ease-in-out hover:bg-[#1a5088] hover:text-white focus:bg-[#1a5088] focus:text-white focus:outline-none"
                             >
                                 <svg
                                     class="h-6 w-6"

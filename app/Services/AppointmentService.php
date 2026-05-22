@@ -5,12 +5,14 @@ namespace App\Services;
 use App\Data\AppointmentData;
 use App\Exceptions\DuplicateAppointmentException;
 use App\Models\User;
-use Illuminate\Support\Carbon;
+use Carbon\Carbon;
 use Zap\Facades\Zap;
+use Throwable;
+use Exception;
 
-class AppointmentService
+class AppointmentService extends FactoryService
 {
-    public function createAppointment(AppointmentData $data, User $teacher, User $parent): void
+    public function create(AppointmentData $data, User $teacher, User $parent): void
     {
         $this->guardAgainstDuplicate($data->date, $teacher, $parent);
 
@@ -23,7 +25,7 @@ class AppointmentService
             ->save();
     }
 
-    public function deleteAppointment(Carbon $date, User $teacher, User $parent): void
+    public function delete(Carbon $date, User $teacher, User $parent): void
     {
         $teacher->schedules()
             ->appointments()
@@ -34,13 +36,13 @@ class AppointmentService
 
     private function guardAgainstDuplicate(Carbon $date, User $teacher, User $parent): void
     {
-        $exists = $teacher->schedules()
+        $hasAppointment = $teacher->schedules()
             ->appointments()
             ->forDate($date->toDateString())
             ->whereJsonContains('metadata->parent_id', $parent->id)
             ->exists();
 
-        if ($exists) {
+        if ($hasAppointment) {
             throw new DuplicateAppointmentException();
         }
     }

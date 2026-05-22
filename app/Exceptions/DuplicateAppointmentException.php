@@ -6,7 +6,9 @@ use RuntimeException;
 
 class DuplicateAppointmentException extends RuntimeException
 {
-    public function __construct(string $message = 'This parent already has an appointment with this teacher on the selected day.')
+    public function __construct(
+        string $message = 'This parent already has an appointment with this teacher on the selected day.'
+    )
     {
         parent::__construct($message);
     }

@@ -9,13 +9,13 @@ use Spatie\Permission\Models\Role;
 use Database\Seeders\RoleSeeder;
 use App\Enums\UserRole;
 use App\Models\User;
-use Illuminate\Support\Carbon;
+use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Database\Seeders\UserSeeder;
 use Illuminate\Database\Eloquent\Collection;
 use Zap\Facades\Zap;
 use App\Data\SlotData;
-use App\Services\SlotFactory;
+use App\Services\AvailabilitySlots;
 
 #[Signature('app:demo')]
 #[Description('Seed demo teachers, parents, availability and bookings')]
@@ -75,7 +75,7 @@ class Demo extends Command
 
     private function createTeachersBookingSlots(): void
     {
-        $slotFactory = new SlotFactory();
+        $slotFactory = new AvailabilitySlots();
 
         $this->teachers->each(function (User $teacher) use ($slotFactory) {
             $duration = self::SLOT_DURATIONS[array_rand(self::SLOT_DURATIONS)];
@@ -89,7 +89,7 @@ class Demo extends Command
                 slot_duration: $duration,
             );
 
-            $slotFactory->createAvailabilitySlots($data, $teacher);
+            $slotFactory->create($data, $teacher);
             $this->info("Teacher {$teacher->id}: {$duration}-min slots created.");
         });
     }
