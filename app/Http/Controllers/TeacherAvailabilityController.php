@@ -40,8 +40,8 @@ class TeacherAvailabilityController extends Controller
             Carbon::parse($request->start_date),
             Carbon::parse($request->end_date),
             $request->days,
-            $request->start_time,
-            $request->end_time,
+            Carbon::parse($request->start_time)->format('H:i'),
+            Carbon::parse($request->end_time)->format('H:i'),
             (int) $request->slot_duration,
         );
 
@@ -57,8 +57,8 @@ class TeacherAvailabilityController extends Controller
             $this->availability->update(
                 $teacher,
                 $availability,
-                $request->start_time,
-                $request->end_time,
+                Carbon::parse($request->start_time)->format('H:i'),
+                Carbon::parse($request->end_time)->format('H:i'),
                 (int) $request->slot_duration,
             );
         } catch (SlotHasBookingsException) {

@@ -21,7 +21,7 @@ class ParentDashboardController extends Controller
     {
         $monthParam = $request->query('month');
         $month = $monthParam
-            ? Carbon::createFromFormat('Y-m', $monthParam)->startOfMonth()
+            ? Carbon::parse($monthParam)->startOfMonth()
             : Carbon::today()->startOfMonth();
 
         return Inertia::render('Dashboard/Parent', [
@@ -127,8 +127,8 @@ class ParentDashboardController extends Controller
 
         return [
             'label'         => $month->format('F Y'),
-            'prev_month'    => $month->copy()->subMonth()->format('Y-m'),
-            'next_month'    => $month->copy()->addMonth()->format('Y-m'),
+            'prev_month'    => $month->copy()->subMonth()->toDateString(),
+            'next_month'    => $month->copy()->addMonth()->toDateString(),
             'days'          => $days,
             'start_weekday' => (int) $start->format('N') - 1, // 0=Mon … 6=Sun
         ];

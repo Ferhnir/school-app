@@ -2,6 +2,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, useForm, usePage, router } from '@inertiajs/vue3';
 import { computed } from 'vue';
+import { toIsoDateTime } from '@/utils/date';
 
 defineProps({
     schedule: Array,
@@ -43,11 +44,11 @@ const submit = () => {
     const day = dayNames[new Date(form.date + 'T00:00:00').getDay()];
 
     form.transform(data => ({
-        start_date:    data.date,
-        end_date:      data.date,
+        start_date:    toIsoDateTime(data.date),
+        end_date:      toIsoDateTime(data.date),
         days:          [day],
-        start_time:    data.start_time,
-        end_time:      data.end_time,
+        start_time:    toIsoDateTime(data.date, data.start_time),
+        end_time:      toIsoDateTime(data.date, data.end_time),
         slot_duration: data.slot_duration,
     })).post(route('teachers.availabilities.store', { teacher: authUserId }), {
         onSuccess: () => form.reset(),

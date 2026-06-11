@@ -1,6 +1,7 @@
 <script setup>
 import { useForm } from '@inertiajs/vue3'
 import { computed } from 'vue'
+import { toIsoDateTime } from '@/utils/date'
 
 const props = defineProps({
     open:     Boolean,
@@ -57,7 +58,14 @@ const toggleDay = (day) => {
 const submit = () => {
     if (!form.teacher_id) return
 
-    form.post(
+    form.transform(data => ({
+        start_date:    toIsoDateTime(data.start_date),
+        end_date:      toIsoDateTime(data.end_date),
+        days:          data.days,
+        start_time:    toIsoDateTime(data.start_date, data.start_time),
+        end_time:      toIsoDateTime(data.start_date, data.end_time),
+        slot_duration: data.slot_duration,
+    })).post(
         route('teachers.availabilities.store', { teacher: form.teacher_id }),
         { onSuccess: () => emit('close') }
     )
