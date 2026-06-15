@@ -39,10 +39,6 @@ Route::group([
                 ->name('parent.dashboard.download');
             Route::post('/parent/dashboard/email', [ParentDashboardController::class, 'email'])
                 ->name('parent.dashboard.email');
-            Route::get('/parent/calendar/{date}/download', [ParentDashboardController::class, 'downloadDate'])
-                ->name('parent.calendar.download');
-            Route::post('/parent/calendar/{date}/email', [ParentDashboardController::class, 'emailDate'])
-                ->name('parent.calendar.email');
         });
 
         Route::get('/parent/bookings', [ParentBookingController::class, 'index'])
@@ -64,6 +60,13 @@ Route::group([
         });
 
     });
+});
+
+Route::middleware('role:' . UserRole::PARENT->value)->group(function () {
+    Route::get('/parent/calendar/{date}/download', [ParentDashboardController::class, 'downloadDate'])
+        ->name('parent.calendar.download');
+    Route::post('/parent/calendar/{date}/email', [ParentDashboardController::class, 'emailDate'])
+        ->name('parent.calendar.email');
 });
 
 //PARENTS
