@@ -41,6 +41,24 @@ class UserSeeder extends Seeder
                 'email' => 'zdunskimaksymilian@gmail.com',
                 'password' => Hash::make('password123'),
                 'email_verified_at' => now(),
+            ],
+            [
+                'name' => 'Marian Rudy',
+                'email' => 'marian.rudy@gmail.com',
+                'password' => Hash::make('password123'),
+                'email_verified_at' => now(),
+            ],
+            [
+                'name' => 'Mariola Jola',
+                'email' => 'mariola.jola@gmail.com',
+                'password' => Hash::make('password123'),
+                'email_verified_at' => now(),
+            ],
+            [
+                'name' => 'Monter Tlen',
+                'email' => 'monterek5@o2.pl',
+                'password' => Hash::make('password123'),
+                'email_verified_at' => now(),
             ]
         ];
 
@@ -48,6 +66,33 @@ class UserSeeder extends Seeder
             $user = User::query()->firstOrCreate(['email' => $parent['email']], $parent);
 
             $user->assignRole(UserRole::PARENT->value);
+        }
+
+        $teachers = [
+            [
+                'name' => 'Mr Ozy Hillow',
+                'email' => 'hillow@gmail.com',
+                'password' => Hash::make('password123'),
+                'email_verified_at' => now(),
+            ],
+            [
+                'name' => 'Jan Novwak',
+                'email' => 'nowak@gmail.com',
+                'password' => Hash::make('password123'),
+                'email_verified_at' => now(),
+            ],
+            [
+                'name' => 'Pawel Monter',
+                'email' => 'monterek6@gmail.com',
+                'password' => Hash::make('password123'),
+                'email_verified_at' => now(),
+            ],
+        ];
+
+        foreach($teachers as $teacher){
+            $user = User::query()->firstOrCreate(['email' => $teacher['email']], $teacher);
+
+            $user->assignRole(UserRole::TEACHER->value);
         }
     }
 }
