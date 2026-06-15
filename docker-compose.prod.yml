@@ -1,0 +1,36 @@
+services:
+    school-app:
+        build:
+            context: .
+            dockerfile: docker/Dockerfile
+        container_name: school-app
+        restart: unless-stopped
+        env_file:
+            - .env
+        expose:
+            - "8000"
+        depends_on:
+            - school-db
+        networks:
+            - huddled
+
+    school-db:
+        image: mysql:8.4
+        container_name: school-db
+        restart: unless-stopped
+        environment:
+            MYSQL_DATABASE: ${DB_DATABASE}
+            MYSQL_USER: ${DB_USERNAME}
+            MYSQL_PASSWORD: ${DB_PASSWORD}
+            MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+        volumes:
+            - school_db_data:/var/lib/mysql
+        networks:
+            - huddled
+
+volumes:
+    school_db_data:
+
+networks:
+    huddled:
+        external: true
