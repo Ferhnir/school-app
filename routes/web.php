@@ -56,6 +56,7 @@ Route::group([
 
         Route::middleware('role:' . UserRole::ADMIN->value)->group(function () {
             Route::get('/admin/users', [UserController::class, 'index'])->name('admin.users.index');
+            Route::post('/admin/users', [UserController::class, 'store'])->name('admin.users.store');
             Route::get('/bookings',    [BookingsController::class, 'index'])->name('admin.bookings.index');
         });
 
