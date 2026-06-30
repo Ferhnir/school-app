@@ -31,7 +31,8 @@ const fetchSlots = async () => {
     try {
         const url = route('parent.slots.index', { teacher: props.teacher.id, date: moment.utc(props.day.date).unix() })
         const res = await fetch(url)
-        slots.value = await res.json()
+        const data = await res.json()
+        slots.value = data.slots ?? []
     } finally {
         loading.value = false
     }

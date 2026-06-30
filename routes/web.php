@@ -71,6 +71,8 @@ Route::middleware([
     Route::post('/admin/users', [UserController::class, 'store'])->name('admin.users.store');
     Route::patch('/admin/users/{user}', [UserController::class, 'update'])->name('admin.users.update');
     Route::patch('/admin/users/{user}/suspend', [UserController::class, 'suspend'])->name('admin.users.suspend');
+    Route::get('/admin/teachers/{teacher}/bookings/{date}/download', [BookingsController::class, 'download'])
+        ->name('admin.bookings.download');
 });
 
 Route::middleware('role:' . UserRole::PARENT->value)->group(function () {
