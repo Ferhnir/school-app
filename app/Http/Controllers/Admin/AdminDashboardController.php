@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
+use Spatie\Permission\Models\Role;
 
 class AdminDashboardController extends Controller
 {
@@ -18,7 +19,8 @@ class AdminDashboardController extends Controller
                 'teachers' => User::role(UserRole::TEACHER->value)->count(),
                 'parents'  => User::role(UserRole::PARENT->value)->count(),
                 'no_roles' => User::doesntHave('roles')->count(),
-            ]
+            ],
+            'roles' => Role::all(['name']),
         ]);
     }
 }
