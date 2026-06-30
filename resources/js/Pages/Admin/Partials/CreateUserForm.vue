@@ -4,9 +4,6 @@ import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import { useForm } from '@inertiajs/vue3';
-import { localeRouteHelpers } from '@/utils/route';
-
-const { useRouteWithLocale } = localeRouteHelpers();
 
 defineProps({
     roles: {
@@ -15,6 +12,8 @@ defineProps({
     },
 });
 
+const emit = defineEmits(['success']);
+
 const form = useForm({
     name: '',
     email: '',
@@ -22,7 +21,9 @@ const form = useForm({
 });
 
 const submit = () => {
-    form.post(useRouteWithLocale('admin.users.store'));
+    form.post(route('admin.users.store'), {
+        onSuccess: () => emit('success'),
+    });
 };
 
 const formatRole = (role) => {

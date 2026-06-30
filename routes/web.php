@@ -56,11 +56,21 @@ Route::group([
 
         Route::middleware('role:' . UserRole::ADMIN->value)->group(function () {
             Route::get('/admin/users', [UserController::class, 'index'])->name('admin.users.index');
-            Route::post('/admin/users', [UserController::class, 'store'])->name('admin.users.store');
             Route::get('/bookings',    [BookingsController::class, 'index'])->name('admin.bookings.index');
         });
 
     });
+});
+
+// ADMIN — mutations with route-model binding live outside {locale}
+Route::middleware([
+    'auth',
+    'verified',
+    'role:' . UserRole::ADMIN->value,
+])->group(function () {
+    Route::post('/admin/users', [UserController::class, 'store'])->name('admin.users.store');
+    Route::patch('/admin/users/{user}', [UserController::class, 'update'])->name('admin.users.update');
+    Route::patch('/admin/users/{user}/suspend', [UserController::class, 'suspend'])->name('admin.users.suspend');
 });
 
 Route::middleware('role:' . UserRole::PARENT->value)->group(function () {
@@ -110,7 +120,11 @@ Route::middleware([
 });
 
 Route::get('/lang/{locale}', function ($locale) {
-    app()->setLocale($locale);
+    if (in_array($locale, ['en', 'pl', 'ua'], true)) {
+        session(['locale' => $locale]);
+        app()->setLocale($locale);
+    }
+
     return redirect()->back();
 })->name('language.switch');
 

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Requests\Admin\StoreUserRequest;
+use App\Http\Requests\Admin\UpdateUserRequest;
 use App\Models\User;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
@@ -33,8 +34,17 @@ class UserController extends Controller
         }
 
         $users = $query
+            ->with('roles')
             ->paginate(10)
-            ->withQueryString();
+            ->withQueryString()
+            ->through(fn (User $user) => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'email_verified_at' => $user->email_verified_at,
+                'suspended_at' => $user->suspended_at,
+                'role' => $user->roles->first()?->name,
+            ]);
 
         return Inertia::render('UsersPanel', [
             'users_counts' => [
@@ -57,17 +67,56 @@ class UserController extends Controller
     {
         $validated = $request->validated();
 
-        $user = User::create([
+        $user = User::query()->create([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Str::password(16),
             'email_verified_at' => now(),
         ]);
 
-        $user->assignRole($validated['role']->value);
+        $user->assignRole($validated['role']);
 
         return redirect()
-            ->route('admin.users.index', ['locale' => $request->route('locale')])
+            ->route('admin.users.index', ['locale' => app()->getLocale()])
             ->with('message', 'User account created successfully.');
+    }
+
+    public function update(UpdateUserRequest $request, User $user): RedirectResponse
+    {
+        $validated = $request->validated();
+
+        $user->update([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+        ]);
+
+        $user->syncRoles([$validated['role']]);
+
+        return redirect()
+            ->route('admin.users.index', ['locale' => app()->getLocale()])
+            ->with('message', 'User updated successfully.');
+    }
+
+    public function suspend(Request $request, User $user): RedirectResponse
+    {
+        if ($user->id === $request->user()->id) {
+            return redirect()
+                ->back()
+                ->with('error', 'You cannot suspend your own account.');
+        }
+
+        $wasSuspended = $user->suspended_at !== null;
+
+        $user->update([
+            'suspended_at' => $wasSuspended ? null : now(),
+        ]);
+
+        $message = $wasSuspended
+            ? 'User account reactivated.'
+            : 'User account suspended.';
+
+        return redirect()
+            ->back()
+            ->with('message', $message);
     }
 }

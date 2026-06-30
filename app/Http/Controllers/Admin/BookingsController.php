@@ -16,12 +16,12 @@ class BookingsController extends Controller
     {
         $offset    = (int) $request->query('week', 0);
         $monday    = Carbon::now()->startOfWeek(Carbon::MONDAY)->addWeeks($offset);
-        $friday    = $monday->copy()->addDays(4);
-        $weekDates = collect(range(0, 4))->map(fn ($i) => $monday->copy()->addDays($i));
+        $sunday    = $monday->copy()->addDays(6);
+        $weekDates = collect(range(0, 6))->map(fn ($i) => $monday->copy()->addDays($i));
 
         $teachers = User::role(UserRole::TEACHER->value)
-            ->with(['schedules' => function ($query) use ($monday, $friday) {
-                $query->forDateRange($monday->toDateString(), $friday->toDateString())
+            ->with(['schedules' => function ($query) use ($monday, $sunday) {
+                $query->forDateRange($monday->toDateString(), $sunday->toDateString())
                     ->with('periods');
             }])
             ->get()
@@ -82,8 +82,8 @@ class BookingsController extends Controller
                 'prev'   => $offset - 1,
                 'next'   => $offset + 1,
                 'start'  => $monday->toDateString(),
-                'end'    => $friday->toDateString(),
-                'label'  => $monday->format('d M') . ' – ' . $friday->format('d M Y'),
+                'end'    => $sunday->toDateString(),
+                'label'  => $monday->format('d M') . ' – ' . $sunday->format('d M Y'),
             ],
             'teachers' => $teachers,
             'parents'  => User::role(UserRole::PARENT->value)->select('id', 'name')->orderBy('name')->get(),
