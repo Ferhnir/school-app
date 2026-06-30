@@ -57,7 +57,10 @@ class TeacherSlotsController extends Controller
             })
             ->values();
 
-        return response()->json($slots);
+        return response()->json([
+            'slots'             => $slots,
+            'booked_parent_ids' => $parentIds->values()->all(),
+        ]);
     }
 
     public function store(StoreBookingRequest $request, User $teacher, Carbon $date): RedirectResponse

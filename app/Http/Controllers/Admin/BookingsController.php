@@ -5,17 +5,20 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\UserRole;
 use App\Models\User;
 use App\Http\Controllers\Controller;
+use App\Services\TeacherDayBookingsPdf;
+use Carbon\Constants\UnitValue;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 class BookingsController extends Controller
 {
     public function index(Request $request): Response
     {
         $offset    = (int) $request->query('week', 0);
-        $monday    = Carbon::now()->startOfWeek(Carbon::MONDAY)->addWeeks($offset);
+        $monday    = Carbon::now()->startOfWeek(UnitValue::MONDAY)->addWeeks($offset);
         $sunday    = $monday->copy()->addDays(6);
         $weekDates = collect(range(0, 6))->map(fn ($i) => $monday->copy()->addDays($i));
 
@@ -88,6 +91,13 @@ class BookingsController extends Controller
             'teachers' => $teachers,
             'parents'  => User::role(UserRole::PARENT->value)->select('id', 'name')->orderBy('name')->get(),
         ]);
+    }
+
+    public function download(User $teacher, Carbon $date, TeacherDayBookingsPdf $pdf): HttpResponse
+    {
+        abort_unless( $teacher->hasRole(UserRole::TEACHER->value), HttpResponse::HTTP_NOT_FOUND);
+
+        return $pdf->download($teacher, $date);
     }
 
 }

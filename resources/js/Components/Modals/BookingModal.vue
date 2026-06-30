@@ -13,6 +13,7 @@ const props = defineProps({
 const emit = defineEmits(['close'])
 
 const slots            = ref([])
+const bookedParentIds  = ref([])
 const loading          = ref(false)
 const selectedSlotTime = ref('')
 const parentId         = ref('')
@@ -21,11 +22,26 @@ const submitting       = ref(false)
 
 const selectedSlot = computed(() => slots.value.find(s => s.start_time === selectedSlotTime.value) ?? null)
 
+const isParentBooked = (parent) => bookedParentIds.value.includes(parent.id)
+
+const parentOptionLabel = (parent) =>
+    isParentBooked(parent) ? `${parent.name} (already booked)` : parent.name
+
+const printBookingsUrl = computed(() => {
+    if (! props.teacher || ! props.day) return null
+
+    return route('admin.bookings.download', {
+        teacher: props.teacher.id,
+        date: moment.utc(props.day.date).unix(),
+    })
+})
+
 const fetchSlots = async () => {
     if (!props.teacher || !props.day) return
 
     loading.value          = true
     slots.value            = []
+    bookedParentIds.value  = []
     selectedSlotTime.value = ''
     parentId.value         = ''
     error.value            = ''
@@ -33,7 +49,9 @@ const fetchSlots = async () => {
     try {
         const url = route('slots.index', { teacher: props.teacher.id, date: moment.utc(props.day.date).unix() })
         const res = await fetch(url)
-        slots.value = await res.json()
+        const data = await res.json()
+        slots.value = data.slots ?? []
+        bookedParentIds.value = data.booked_parent_ids ?? []
     } finally {
         loading.value = false
     }
@@ -45,6 +63,9 @@ watch(() => props.open, (val) => {
 
 const submit = () => {
     if (!selectedSlot.value || !parentId.value) return
+
+    const parent = props.parents.find(p => p.id === Number(parentId.value))
+    if (parent && isParentBooked(parent)) return
 
     submitting.value = true
     error.value      = ''
@@ -154,8 +175,13 @@ const labelClass = 'text-sm font-medium text-gray-700'
                     <label :class="labelClass">Parent</label>
                     <select v-model="parentId" :class="inputClass">
                         <option value="">Select parent</option>
-                        <option v-for="p in parents" :key="p.id" :value="p.id">
-                            {{ p.name }}
+                        <option
+                            v-for="p in parents"
+                            :key="p.id"
+                            :value="p.id"
+                            :disabled="isParentBooked(p)"
+                        >
+                            {{ parentOptionLabel(p) }}
                         </option>
                     </select>
                 </div>
@@ -168,6 +194,17 @@ const labelClass = 'text-sm font-medium text-gray-700'
                     >
                         Cancel
                     </button>
+                    <a
+                        v-if="printBookingsUrl"
+                        :href="printBookingsUrl"
+                        target="_blank"
+                        class="inline-flex items-center gap-1.5 px-4 py-2 text-sm border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 transition"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                        </svg>
+                        Print bookings
+                    </a>
                     <button
                         @click="submit"
                         :disabled="!selectedSlot || !parentId || submitting"
